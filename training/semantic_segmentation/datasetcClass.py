@@ -25,7 +25,7 @@ augmentation_pixel_techniques_pool = {
 
 
 class classDataset(Dataset):
-    def __init__(self, csvpath, mode, height, width, mean_std, debug=False):
+    def __init__(self, csvpath, mode, size=(1080, 1920), debug=False):
         """
         Constructor of Dataset
         Format of csv file:
@@ -57,6 +57,7 @@ class classDataset(Dataset):
                 ),
             ]
         )
+
         self.pixel_aug = Compose(
             [
                 augmentation_pixel_techniques_pool["RandomBrightnessContrast"],
@@ -64,8 +65,7 @@ class classDataset(Dataset):
             ]
         )
 
-        self.height = height
-        self.width = width
+        self.height, self.width = size
         self.mode = mode
         self.debug = debug
 
@@ -95,7 +95,7 @@ class classDataset(Dataset):
         """
         image = cv2.imread(self.csv_file[idx, 0], cv2.IMREAD_COLOR)
         label = cv2.imread(self.csv_file[idx, 1], cv2.IMREAD_GRAYSCALE)
-
+        label[label > 1] = 1
         if (
             image.shape[1] == self.width
             and image.shape[0] == self.height

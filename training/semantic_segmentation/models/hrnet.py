@@ -12,7 +12,7 @@ import torch.nn.functional as F
 def hrnet(n_classes):
 
     encoder = HighResolutionNet()
-    decoder = C1_transposed(n_classes)
+    decoder = C1(n_classes)
 
     class model(nn.Module):
         def __init__(self, encoder, decoder):
@@ -587,17 +587,22 @@ class HighResolutionNet(nn.Module):
             self.load_state_dict(model_dict)
 
 
-class C1_transposed(nn.Module):
-    def __init__(self, n_classes, use_softmax=False):
-        super(C1_transposed, self).__init__()
+def conv1x1_bn_relu(in_planes, out_planes, stride=1):
+    "3x3 convolution + BN + relu"
+
+    return nn.Sequential(
+        nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, padding=0),
+        BatchNorm2d(out_planes, momentum=0.01),
+        nn.ReLU(inplace=False),
+    )
+
+
+class C1(nn.Module):
+    def __init__(self, n_classes, fc_dim=240, use_softmax=False):
+        super(C1, self).__init__()
         self.use_softmax = use_softmax
-        fc_dim = 240
-        self.cbr = nn.Sequential(
-            nn.ConvTranspose2d(fc_dim, fc_dim // 2, kernel_size=2, stride=2, padding=0),
-            BatchNorm2d(fc_dim // 2, momentum=0.01),
-            nn.ReLU(inplace=False),
-        )
-        self.conv_last = nn.ConvTranspose2d(fc_dim // 2, n_classes, 2, 2, 0)
+        self.cbr = conv1x1_bn_relu(fc_dim, fc_dim, 1)
+        self.conv_last = nn.Conv2d(fc_dim, n_classes, 1, 1, 0)
 
     def forward(self, conv_out, segSize=None):
         conv5 = conv_out[-1]

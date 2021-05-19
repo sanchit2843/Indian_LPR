@@ -10,11 +10,13 @@ from utils.util import *
 import torch.nn.functional as F
 from datasetcClass import classDataset
 from models.hrnet import hrnet
-from evaluation import validate_model
-from ranger import Ranger
+
+from utils.ranger import Ranger
+from utils.lr_scheduler import polylr
+from utils.metrics import get_metrics_values
 
 
-def train(epoch, n_epochs, model, data_loader, criterion, optimizer):
+def train(epoch, n_epochs, model, data_loader, criterion, optimizer, scheduler=None):
     """
     Train function of the model
 
@@ -26,7 +28,7 @@ def train(epoch, n_epochs, model, data_loader, criterion, optimizer):
         data_loader: Pytorch DataLoader
         criterion: Loss function
         optimizer: Optimizer
-
+        scheduler: lr scheduler, should support step function
     """
 
     model.train()
@@ -41,22 +43,99 @@ def train(epoch, n_epochs, model, data_loader, criterion, optimizer):
 
         model.zero_grad()
         outputs = model(inputs)["output"]
+
         if outputs.shape[1] != targets.shape[1] or outputs.shape[2] != targets.shape[2]:
             outputs = F.upsample(
                 input=outputs,
                 size=(targets.shape[1], targets.shape[2]),
                 mode="bilinear",
             )
+
         loss = criterion(outputs, targets)
         loss.backward()
         optimizer.step()
+
+        if scheduler:
+            scheduler.step()
 
         losses.update(loss.item())
         sys.stdout.write(
             "\r[Epoch %d/%d] [Batch %d / %d] [Loss: %f]"
             % (epoch, n_epochs, i, len(data_loader), losses.avg)
         )
+
     print("Epoch Loss", losses.avg)
+
+
+def validate_model(
+    epoch, model, data_loader, criterion, best_val_iou, n_classes, output_dir
+):
+    """
+    Validate model using Intersection over Union score
+
+    Parameters:
+        epoch (int): Current running epoch
+        model: Model
+        data_loader: Pytorch DataLoader
+        criterion: Loss function
+        best_val_iou (float): Current best value of IoU
+        n_classes (int): Number of classes
+        output_dir (str): Path to save weights
+
+    Returns:
+        float: Validation score
+
+    """
+
+    model.eval()
+    losses = AverageMeter()
+    intersection_meter = AverageMeter()
+    union_meter = AverageMeter()
+
+    with torch.no_grad():
+        for i, sample in enumerate(data_loader):
+            inputs = sample["image"].type(torch.FloatTensor)
+            targets = sample["label"].type(torch.LongTensor)
+            if torch.cuda.is_available():
+                targets = targets.cuda()
+                inputs = inputs.cuda()
+
+            outputs = model(inputs, (targets.shape[1], targets.shape[2]))["output"]
+            if (
+                outputs.shape[1] != targets.shape[1]
+                or outputs.shape[2] != targets.shape[2]
+            ):
+                outputs = F.upsample(
+                    input=outputs,
+                    size=(targets.shape[1], targets.shape[2]),
+                    mode="bilinear",
+                )
+
+            loss = criterion(outputs, targets)
+
+            inters, uni = get_metrics_values(targets, [outputs], n_classes)
+            intersection_meter.update(inters)
+            union_meter.update(uni)
+
+            losses.update(loss.item())
+            sys.stdout.write(
+                "\r[Epoch %d] [Batch %d / %d]" % (epoch, i, len(data_loader))
+            )
+
+    iou = intersection_meter.sum / union_meter.sum
+
+    if best_val_iou < np.mean(iou):
+        best_val_iou = np.mean(iou)
+        torch.save(
+            {"state_dict": model.state_dict(), "iou": np.mean(iou), "epoch": epoch},
+            os.path.join(output_dir, "best.pth"),
+        )
+    print("")
+    for i, _iou in enumerate(iou):
+        print("class [{}], IoU: {:.4f}".format(i, _iou))
+
+    print("Epoch Loss", losses.avg, "Validation_meanIou", np.mean(iou))
+    return best_val_iou
 
 
 def main():
@@ -82,23 +161,15 @@ def main():
         "--n_classes",
         type=int,
         default=2,
-        help="number of claesses",
+        help="number of classes",
     )
 
     parser.add_argument(
-        "--height",
+        "--n_epoch",
         type=int,
-        default=1080,
-        help="height of image",
+        default=200,
+        help="number of epochs",
     )
-
-    parser.add_argument(
-        "--width",
-        type=int,
-        default=1920,
-        help="width of image",
-    )
-
     parser.add_argument(
         "--batch_size",
         type=int,
@@ -113,7 +184,11 @@ def main():
     if os.path.exists(os.path.join(args.csvpath, "valid.csv")):
         validate = True
 
-    train_object = classDataset(args.csvpath, "train", args.height, args.width)
+    # hyperparameters
+    initial_learning_rate = 0.01
+    weight_decay = 0.0005
+
+    train_object = classDataset(args.csvpath, "train")
     train_loader = DataLoader(
         train_object,
         batch_size=args.batch_size,
@@ -122,7 +197,7 @@ def main():
     )
 
     if validate:
-        valid_object = classDataset(args.csvpath, "valid", args.height, args.width)
+        valid_object = classDataset(args.csvpath, "valid")
         valid_loader = DataLoader(
             valid_object,
             batch_size=args.batch_size,
@@ -132,16 +207,24 @@ def main():
 
     model = hrnet(args.n_classes)
     criterion = nn.CrossEntropyLoss()
-    optimizer = Ranger(model.parameters(), lr=5e-3)
+
+    optimizer = Ranger(
+        model.parameters(), lr=initial_learning_rate, weight_decay=weight_decay
+    )
+
+    lr_scheduler = polylr(
+        optimizer, args.n_epoch * len(train_loader), initial_learning_rate
+    )
+
     best_val_iou = 0
 
     if torch.cuda.is_available():
         model.cuda()
 
-    start_epoch = 1
-    n_epochs = 200
-    for epoch in range(start_epoch, n_epochs + 1):
-        train(epoch, n_epochs, model, train_loader, criterion, optimizer)
+    for epoch in range(1, args.n_epoch + 1):
+        train(
+            epoch, args.n_epoch, model, train_loader, criterion, optimizer, lr_scheduler
+        )
         if validate:
             best_val_iou = validate_model(
                 epoch,
