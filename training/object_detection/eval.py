@@ -12,9 +12,10 @@ from tqdm import tqdm
 from object_detection_metrics_calculation.main import get_coco_metrics_from_path
 from object_detection_metrics_calculation.utils import write_txt
 import argparse
+from utils.utils import sort_by_score
 
 
-def validate_one_epoch(model, eval_loader, output_path):
+def validate_one_epoch(model, eval_loader, output_path, decoder):
     gt_boxes = []
     gt_classes = []
     pred_boxes = []
@@ -104,4 +105,4 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(args.output_path, "groundtruths"), exist_ok=True)
     os.makedirs(os.path.join(args.output_path, "detections"), exist_ok=True)
 
-    all_img_metrics = validate_one_epoch(model, eval_loader, args.output_path)
+    all_img_metrics = validate_one_epoch(model, eval_loader, args.output_path, decoder)

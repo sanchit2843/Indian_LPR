@@ -62,6 +62,7 @@ class YoloDataset(Dataset):
             self.transform(image),
             torch.from_numpy(np.asarray(boxes)),
             torch.from_numpy(np.asarray(classes)),
+            current_line.split(" ")[0],
         )
 
     def process_txt(self, current_line):
@@ -96,7 +97,7 @@ class YoloDataset(Dataset):
         plt.show()
 
     def collate_fn(self, data):
-        imgs_list, boxes_list, classes_list = zip(*data)
+        imgs_list, boxes_list, classes_list, paths = zip(*data)
         batch_size = len(boxes_list)
 
         pad_boxes_list = []
@@ -129,7 +130,7 @@ class YoloDataset(Dataset):
         batch_boxes = torch.stack(pad_boxes_list)
         batch_classes = torch.stack(pad_classes_list)
         batch_imgs = torch.stack(imgs_list)
-        return batch_imgs, batch_boxes, batch_classes
+        return batch_imgs, batch_boxes, batch_classes, paths
 
 
 if __name__ == "__main__":

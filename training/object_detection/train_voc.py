@@ -10,17 +10,18 @@ import argparse
 from eval import validate_one_epoch
 
 
-def fit_one_epoch(epoch, model, train_loader, optimizer, steps):
+def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
     GLOBAL_STEPS, steps_per_epoch = steps
     for epoch_step, data in enumerate(train_loader):
 
-        batch_imgs, batch_boxes, batch_classes = data
+        batch_imgs, batch_boxes, batch_classes, _ = data
         batch_imgs = batch_imgs.cuda()
 
         batch_boxes = batch_boxes.cuda()
         batch_classes = batch_classes.cuda()
-        #        batch_mask = batch_mask.cuda()
-        lr = lr_func()
+
+        lr = lr_func(*lr_params)
+
         for param in optimizer.param_groups:
             param["lr"] = lr
 
@@ -33,6 +34,7 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps):
         optimizer.step()
 
         end_time = time.time()
+
         cost_time = int((end_time - start_time) * 1000)
 
         if epoch_step % 100 == 0:
@@ -66,10 +68,32 @@ def main():
     )
 
     parser.add_argument(
-        "--weight_path",
+        "--valid_txt",
         type=str,
-        required=True,
-        help="path to weight pth file",
+        required=False,
+        default="./",
+        help="Location to data txt file",
+    )
+
+    parser.add_argument(
+        "--batch_size",
+        type=int,
+        default=2,
+        help="output directory to save model",
+    )
+
+    parser.add_argument(
+        "--epochs",
+        type=int,
+        default=100,
+        help="output directory to save model",
+    )
+
+    parser.add_argument(
+        "--warmupratio",
+        type=float,
+        default=0.12,
+        help="output directory to save model",
     )
 
     parser.add_argument(
@@ -80,53 +104,65 @@ def main():
     )
 
     args = parser.parse_args()
+
+    os.makedirs(args.output_path, exist_ok=True)
+
+    # initialize dataloaders
     train_dataset = YoloDataset(args.train_txt)
-    val_dataset = YoloDataset(
-        "/media/sanchit/datasets/Our-collected-dataset/plate_data_download/Data_public/Extras/train_yolo.txt",
-        train=False,
-    )
-
-    model = FCOSDetector(mode="training").cuda()
-    if torch.cuda.device_count() > 1:
-        model = nn.DataParallel(model)
-
-    optimizer = Ranger(model.parameters(), lr=1e-4)
-
-    BATCH_SIZE = 2
-    EPOCHS = 200
-    WARMPUP_STEPS_RATIO = 0.12
-
     train_loader = torch.utils.data.DataLoader(
         train_dataset,
-        batch_size=BATCH_SIZE,
+        batch_size=args.batch_size,
         shuffle=True,
         collate_fn=train_dataset.collate_fn,
     )
 
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=BATCH_SIZE,
-        shuffle=True,
-        collate_fn=val_dataset.collate_fn,
-    )
+    if os.path.isfile(args.valid_txt):
+        eval_dataset = YoloDataset(
+            "/media/sanchit/datasets/Our-collected-dataset/plate_data_download/Data_public/Extras/train_yolo.txt",
+            train=False,
+        )
+        eval_loader = torch.utils.data.DataLoader(
+            eval_dataset,
+            batch_size=args.batch_size,
+            shuffle=True,
+            collate_fn=eval_dataset.collate_fn,
+        )
 
-    steps_per_epoch = len(train_dataset) // BATCH_SIZE
-    TOTAL_STEPS = steps_per_epoch * EPOCHS
-    WARMPUP_STEPS = TOTAL_STEPS * WARMPUP_STEPS_RATIO
+    model = FCOSDetector(mode="training").cuda()
 
-    GLOBAL_STEPS = 1
+    if torch.cuda.device_count() > 1:
+        model = nn.DataParallel(model)
+
     LR_INIT = 5e-4
     LR_END = 1e-6
+    optimizer = Ranger(model.parameters(), lr=LR_INIT, weight_decay=5e-4)
+
+    steps_per_epoch = len(train_dataset) // args.batch_size
+
+    TOTAL_STEPS = steps_per_epoch * args.epochs
+    WARMPUP_STEPS = TOTAL_STEPS * args.warmupratio
+    GLOBAL_STEPS = 1
+
+    lr_params = (GLOBAL_STEPS, WARMPUP_STEPS, TOTAL_STEPS, LR_INIT, LR_END)
 
     model.train()
 
-    os.makedirs(ckpt_path, exist_ok=True)
-
-    for epoch in range(EPOCHS):
+    for epoch in range(args.epochs):
         fit_one_epoch(
-            epoch, model, train_loader, optimizer, (GLOBAL_STEPS, steps_per_epoch)
+            epoch,
+            model,
+            train_loader,
+            optimizer,
+            (GLOBAL_STEPS, steps_per_epoch),
+            lr_params,
         )
+        if os.path.isfile(args.valid_txt):
+            validate_one_epoch(model, eval_loader, args.output_path)
         torch.save(
             model.state_dict(),
-            "{}/hrnet18v2_ranger{}.pth".format(ckpt_path, epoch + 1),
+            "{}/hrnet18v2_ranger{}.pth".format(args.output_path, epoch + 1),
         )
+
+
+if __name__ == "__main__":
+    main()
