@@ -4,12 +4,6 @@ from torch.utils.data import Dataset
 from torchvision import transforms
 import numpy as np
 import matplotlib.pyplot as plt
-
-try:
-    import dataloader.augment as dataAug
-except:
-    import augment as dataAug
-
 import random
 from albumentations import (
     HueSaturationValue,
