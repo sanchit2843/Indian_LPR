@@ -19,7 +19,9 @@
 from collections import defaultdict
 
 import numpy as np
-from object_detection_metrics_calculation.src.bounding_box import BBFormat
+from src.semantic_segmentation.object_detection_metrics_calculation.src.bounding_box import (
+    BBFormat,
+)
 
 
 def get_coco_summary(groundtruth_bbs, detected_bbs):

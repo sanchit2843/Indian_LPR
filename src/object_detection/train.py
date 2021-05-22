@@ -1,17 +1,18 @@
-from model.fcos import FCOSDetector
+from src.object_detection.model.fcos import FCOSDetector
 import torch
-from dataloader.custom_dataset import YoloDataset
+from src.object_detection.dataloader.custom_dataset import YoloDataset
 import math, time
-from utils.ranger import Ranger
+from src.object_detection.utils.ranger import Ranger
 from torch import nn
 import os
 import argparse
-from eval import validate_one_epoch
-from utils.utils import lr_func
+from src.object_detection.eval import validate_one_epoch
+from src.object_detection.utils.utils import lr_func
 
 
 def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
     GLOBAL_STEPS, steps_per_epoch = steps
+    GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END = lr_params
 
     for epoch_step, data in enumerate(train_loader):
 
@@ -20,6 +21,7 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
 
         batch_boxes = batch_boxes.cuda()
         batch_classes = batch_classes.cuda()
+        lr_params = (GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
         lr = lr_func(*lr_params)
         for param in optimizer.param_groups:
             param["lr"] = lr
@@ -35,7 +37,7 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
 
         cost_time = int((end_time - start_time) * 1000)
 
-        if epoch_step % 1000 == 0:
+        if epoch_step % 200 == 0:
             print(
                 "global_steps:%d epoch:%d steps:%d/%d cls_loss:%.4f cnt_loss:%.4f reg_loss:%.4f total_loss:%.4f cost_time:%dms lr=%.4e"
                 % (
@@ -102,6 +104,7 @@ def main():
         batch_size=args.batch_size,
         shuffle=True,
         collate_fn=train_dataset.collate_fn,
+        num_workers=2,
     )
 
     model = FCOSDetector(mode="training").cuda()
@@ -112,7 +115,7 @@ def main():
     LR_INIT = 5e-4
     LR_END = 1e-6
     optimizer = Ranger(model.parameters(), lr=LR_INIT, weight_decay=1e-4)
-
+    # check lr scheduling
     steps_per_epoch = len(train_dataset) // args.batch_size
     TOTAL_STEPS = steps_per_epoch * args.epochs
     WARMPUP_STEPS = TOTAL_STEPS * args.warmupratio
@@ -122,7 +125,7 @@ def main():
     decoder = {k: 0 for k in range(10)}
     lr_params = (GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
     for epoch in range(args.epochs):
-        fit_one_epoch(
+        GLOBAL_STEPS = fit_one_epoch(
             epoch,
             model,
             train_loader,

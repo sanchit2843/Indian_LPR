@@ -6,16 +6,18 @@ import os
 import cv2
 from tqdm import tqdm
 import shutil
-from models.hrnet import hrnet
-from utils.yolo_dataset import YoloDataset
-from utils.util import (
+from src.semantic_segmentation.models.hrnet import hrnet
+from src.semantic_segmentation.utils.yolo_dataset import YoloDataset
+from src.semantic_segmentation.utils.util import (
     overlay_colour,
     plate_locate,
     convert_coordinates_to_bbox,
     get_score_from_prediction,
     upsample_boxes,
 )
-from object_detection_metrics_calculation.utils import write_txt
+from src.semantic_segmentation.object_detection_metrics_calculation.utils import (
+    write_txt,
+)
 
 
 def validate_one_epoch(model, eval_loader, args, decoder):

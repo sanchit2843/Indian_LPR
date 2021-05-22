@@ -1,6 +1,6 @@
 from math import isclose
 
-from object_detection_metrics_calculation.src.enumerators import (
+from src.semantic_segmentation.object_detection_metrics_calculation.src.enumerators import (
     BBFormat,
     BBType,
     CoordinatesType,

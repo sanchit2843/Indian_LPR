@@ -40,7 +40,8 @@ def run_single_frame(od_model, lprnet, image):
         ]
         classes = classes[0].cpu().numpy().tolist()
         scores = scores[0].cpu().numpy().tolist()
-
+    if len(boxes) == 0:
+        return None
     plate_images = []
     for b in boxes:
         plate_image = original_image[b[1] : b[3], b[0] : b[2], :]
@@ -73,30 +74,31 @@ def process_directory(args, od_model, lprnet):
 
     for i in os.listdir(args.source):
 
-        if os.path.splitext(i)[1] in ["avi", "mp4"]:
+        if os.path.splitext(i)[1] in [".avi", ".mp4"]:
             process_video(
                 os.path.join(args.source, i), od_model, lprnet, args.output_path
             )
 
-        if os.path.splitext(i)[1] in ["jpg", "png"]:
+        if os.path.splitext(i)[1] in [".png", ".jpg"]:
             image = cv2.imread(os.path.join(args.source, i))
-            out_dict = run_single_frame(od_model, lprnet, args.source)
-            plotted_image = plot_single_frame_from_out_dict(image, out_dict)
+            out_dict = run_single_frame(od_model, lprnet, image)
+            if out_dict:
+                plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
-            cv2.imwrite(
-                os.path.join(args.output_path, "plots", i),
-                plotted_image,
-            )
+                cv2.imwrite(
+                    os.path.join(args.output_path, "plots", i),
+                    plotted_image,
+                )
 
-            with open(
-                os.path.join(
-                    args.output_path,
-                    "jsons",
-                    i.replace("jpg", "json").replace("png", "json"),
-                ),
-                "w",
-            ) as outfile:
-                json.dump({args.source.split("/")[-1]: out_dict}, outfile)
+                with open(
+                    os.path.join(
+                        args.output_path,
+                        "jsons",
+                        i.replace("jpg", "json").replace("png", "json"),
+                    ),
+                    "w",
+                ) as outfile:
+                    json.dump({args.source.split("/")[-1]: out_dict}, outfile)
 
     return
 
@@ -151,31 +153,33 @@ def process_txt(args, od_model, lprnet):
     txt_file = open(args.source, "r")
 
     for i in txt_file.readlines():
-        if os.path.splitext(i)[1] in ["avi", "mp4"]:
+        if os.path.splitext(i)[1] in [".avi", ".mp4"]:
             process_video(
                 os.path.join(args.source, i), od_model, lprnet, args.output_path
             )
 
-        if os.path.splitext(i)[1] in ["jpg", "png"]:
+        if os.path.splitext(i)[1] in [".jpg", ".png"]:
             image = cv2.imread(os.path.join(args.source, i))
 
             out_dict = run_single_frame(od_model, lprnet, image)
-            plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
-            cv2.imwrite(
-                os.path.join(args.output_path, "plots", i),
-                plotted_image,
-            )
+            if out_dict:
+                plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
-            with open(
-                os.path.join(
-                    args.output_path,
-                    "jsons",
-                    i.replace("jpg", "json").replace("png", "json"),
-                ),
-                "w",
-            ) as outfile:
-                json.dump({args.source.split("/")[-1]: out_dict}, outfile)
+                cv2.imwrite(
+                    os.path.join(args.output_path, "plots", i),
+                    plotted_image,
+                )
+
+                with open(
+                    os.path.join(
+                        args.output_path,
+                        "jsons",
+                        i.replace("jpg", "json").replace("png", "json"),
+                    ),
+                    "w",
+                ) as outfile:
+                    json.dump({args.source.split("/")[-1]: out_dict}, outfile)
 
     return
 
@@ -234,17 +238,18 @@ if __name__ == "__main__":
             print("source is image")
             image = cv2.imread(args.source)
             out_dict = run_single_frame(od_model, lprnet, image)
-            plotted_image = plot_single_frame_from_out_dict(image, out_dict)
+            if out_dict:
+                plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
-            cv2.imwrite(
-                os.path.join(args.output_path, "plots", "plotted_image.png"),
-                plotted_image,
-            )
+                cv2.imwrite(
+                    os.path.join(args.output_path, "plots", "plotted_image.png"),
+                    plotted_image,
+                )
 
-            with open(
-                os.path.join(args.output_path, "jsons", "output.json"), "w"
-            ) as outfile:
-                json.dump({args.source.split("/")[-1]: out_dict}, outfile)
+                with open(
+                    os.path.join(args.output_path, "jsons", "output.json"), "w"
+                ) as outfile:
+                    json.dump({args.source.split("/")[-1]: out_dict}, outfile)
 
         if os.path.splitext(args.source)[1] in [".avi", ".mp4"]:
             print("source is video")
