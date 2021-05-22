@@ -34,7 +34,10 @@ def run_single_frame(od_model, lprnet, image):
     with torch.no_grad():
         out = od_model(image)
         scores, classes, boxes = out
-        boxes = boxes[0].cpu().numpy().tolist()
+        boxes = [
+            [int(i[0]), int(i[1]), int(i[2]), int(i[3])]
+            for i in boxes[0].cpu().numpy().tolist()
+        ]
         classes = classes[0].cpu().numpy().tolist()
         scores = scores[0].cpu().numpy().tolist()
 
@@ -46,6 +49,7 @@ def run_single_frame(od_model, lprnet, image):
         im *= 0.0078125
         im = torch.from_numpy(np.transpose(im, (2, 0, 1)))
         plate_images.append(im)
+
     plate_labels = Greedy_Decode_inference(lprnet, torch.stack(plate_images, 0))
     out_dict = {}
 
@@ -59,7 +63,7 @@ def plot_single_frame_from_out_dict(image, dict):
     for _, v in dict.items():
         box, label = v["boxes"], v["label"]
         image = cv2.rectangle(
-            image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), thickness=1
+            image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), thickness=2
         )
         # cv2.put text for adding label
     return image
@@ -154,7 +158,8 @@ def process_txt(args, od_model, lprnet):
 
         if os.path.splitext(i)[1] in ["jpg", "png"]:
             image = cv2.imread(os.path.join(args.source, i))
-            out_dict = run_single_frame(od_model, lprnet, args.source)
+
+            out_dict = run_single_frame(od_model, lprnet, image)
             plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
             cv2.imwrite(
@@ -210,7 +215,7 @@ if __name__ == "__main__":
 
     # load ocr
 
-    lprnet = build_lprnet(lpr_max_len=15, class_num=36).eval()
+    lprnet = build_lprnet(lpr_max_len=16, class_num=37).eval()
     lprnet.load_state_dict(
         torch.load("weights/best_lprnet.pth", map_location=torch.device("cpu"))
     )
@@ -220,13 +225,15 @@ if __name__ == "__main__":
         lprnet = lprnet.cuda()
 
     if os.path.isdir(args.source):
+        print("source is directory, might need time to process")
         process_directory(args, od_model, lprnet)
 
     else:
-        if os.path.splitext(args.source)[1] in ["png", "jpg"]:
 
+        if os.path.splitext(args.source)[1] in [".png", ".jpg"]:
+            print("source is image")
             image = cv2.imread(args.source)
-            out_dict = run_single_frame(od_model, lprnet, args.source)
+            out_dict = run_single_frame(od_model, lprnet, image)
             plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
             cv2.imwrite(
@@ -239,10 +246,12 @@ if __name__ == "__main__":
             ) as outfile:
                 json.dump({args.source.split("/")[-1]: out_dict}, outfile)
 
-        if os.path.splitext(args.source)[1] in ["avi", "mp4"]:
+        if os.path.splitext(args.source)[1] in [".avi", ".mp4"]:
+            print("source is video")
             process_video(args.source, od_model, lprnet)
 
-        if os.path.splitext(args.source)[1] == "txt":
+        if os.path.splitext(args.source)[1] == ".txt":
+            print("source is txt, might need time to process")
             process_txt(args.source, od_model, lprnet)
 
     print("processing done")

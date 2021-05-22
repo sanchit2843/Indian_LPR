@@ -550,7 +550,7 @@ class HighResolutionNet(nn.Module):
 
 def hrnetv2(**kwargs):
     # cfg =
-    with open("model/backbone/hrnet18v1.yaml") as f:
+    with open("src/object_detection/model/backbone/hrnet18v1.yaml") as f:
         file = yaml.load(f)
     model = HighResolutionNet(file, **kwargs)
     return model

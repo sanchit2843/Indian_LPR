@@ -5,14 +5,19 @@
 test pretrained model.
 """
 
-from data.load_data import CHARS, CHARS_DICT, LPRDataLoader
+from src.Licence_Plate_Recognition.data.load_data import (
+    CHARS,
+    CHARS_DICT,
+    LPRDataLoader,
+)
 from sklearn.metrics import classification_report
 from nltk.metrics.distance import edit_distance
 from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import DataLoader
 
 # import torch.backends.cudnn as cudnn
-from model.LPRNet import build_lprnet
+from src.Licence_Plate_Recognition.model.LPRNet import build_lprnet
+
 from torch.autograd import Variable
 import torch.nn.functional as F
 from torch import optim
