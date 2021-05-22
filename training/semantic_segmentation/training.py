@@ -186,7 +186,7 @@ def main():
 
     # hyperparameters
     initial_learning_rate = 0.01
-    weight_decay = 0.0005
+    weight_decay = 0.0001
 
     train_object = classDataset(args.csvpath, "train")
     train_loader = DataLoader(
@@ -206,7 +206,7 @@ def main():
         )
 
     model = hrnet(args.n_classes)
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(weight=torch.Tensor([0.005, 1]).cuda())
 
     optimizer = Ranger(
         model.parameters(), lr=initial_learning_rate, weight_decay=weight_decay
@@ -225,6 +225,16 @@ def main():
         train(
             epoch, args.n_epoch, model, train_loader, criterion, optimizer, lr_scheduler
         )
+        torch.save(
+            args.output_dir,
+            "epoch {}".format(epoch),
+            {
+                "state_dict": model.state_dict(),
+                "epoch": model,
+                "optimizer_state_dict": optimizer.state_dict(),
+            },
+        )
+
         if validate:
             best_val_iou = validate_model(
                 epoch,
@@ -239,6 +249,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# python training.py --csvpath dataset/steel

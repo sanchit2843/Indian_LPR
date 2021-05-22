@@ -14,10 +14,10 @@ from albumentations import (
 
 augmentation_pixel_techniques_pool = {
     "RandomBrightnessContrast": RandomBrightnessContrast(
-        brightness_limit=(0.005, 0.01), contrast_limit=0.01, p=0.3
+        brightness_limit=(0.005, 0.01), contrast_limit=0.01, p=0.1
     ),
     "HueSaturationValue": HueSaturationValue(
-        hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.3
+        hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.1
     ),
 }
 
@@ -69,16 +69,18 @@ class YoloDataset(Dataset):
         boxes = []
         classes = []
 
-        for bbox in current_line.split(" ")[1:]:
-            a = []
-            for idx, x in enumerate(bbox.split(",")):
-                if idx == 4:
-                    classes.append(int(x))
-                if idx % 2 == 0:
-                    a.append(max(0, int(int(x))))
-                else:
-                    a.append(max(0, int(int(x))))
-            boxes.append(a)
+        if len(current_line.split(" ")[1:][0]) > 6:
+            for bbox in current_line.split(" ")[1:]:
+                a = []
+                for idx, x in enumerate(bbox.split(",")):
+                    if idx == 4:
+                        classes.append(int(x))
+                        break
+                    if idx % 2 == 0:
+                        a.append(max(0, int(int(x))))
+                    else:
+                        a.append(max(0, int(int(x))))
+                boxes.append(a)
         return boxes, classes
 
     def debug(self, image, boxes):

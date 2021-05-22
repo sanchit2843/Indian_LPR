@@ -36,6 +36,28 @@ def validate_one_epoch(model, eval_loader, output_path, decoder):
             pred_boxes, pred_classes, pred_scores
         )
 
+        frame = frame.copy()
+        for bbox in boxes[0].numpy():
+            frame = cv2.rectangle(
+                frame,
+                (bbox[0], bbox[1]),
+                (bbox[2], bbox[3]),
+                color=(0, 0, 255),
+                thickness=4,
+            )
+        for bbox in out[2][0].cpu().numpy():
+            frame = cv2.rectangle(
+                frame,
+                (int(bbox[0]), int(bbox[1])),
+                (int(bbox[2]), int(bbox[3])),
+                color=(255, 255, 0),
+                thickness=3,
+            )
+        cv2.imwrite(
+            os.path.join(output_path, "plotted_images", paths[0].split("/")[-1]),
+            frame,
+        )
+
         write_txt(
             (boxes[0].numpy(), classes[0].numpy()),
             (out[2][0].cpu().numpy(), out[1][0].cpu().numpy(), out[0][0].cpu().numpy()),
@@ -104,5 +126,6 @@ if __name__ == "__main__":
 
     os.makedirs(os.path.join(args.output_path, "groundtruths"), exist_ok=True)
     os.makedirs(os.path.join(args.output_path, "detections"), exist_ok=True)
+    os.makedirs(os.path.join(args.output_path, "plotted_images"), exist_ok=True)
 
     all_img_metrics = validate_one_epoch(model, eval_loader, args.output_path, decoder)
