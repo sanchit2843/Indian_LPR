@@ -7,13 +7,12 @@ from torch import nn
 import os
 import argparse
 from eval import validate_one_epoch
+from utils.utils import lr_func
 
 
-def fit_one_epoch(epoch, model, train_loader, optimizer, steps):
+def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
     GLOBAL_STEPS, steps_per_epoch = steps
-    for param in optimizer.param_groups:
-        lr = param["lr"]
-        break
+
     for epoch_step, data in enumerate(train_loader):
 
         batch_imgs, batch_boxes, batch_classes, _ = data
@@ -21,7 +20,9 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps):
 
         batch_boxes = batch_boxes.cuda()
         batch_classes = batch_classes.cuda()
-
+        lr = lr_func(*lr_params)
+        for param in optimizer.param_groups:
+            param["lr"] = lr
         start_time = time.time()
 
         model.zero_grad()
@@ -77,7 +78,12 @@ def main():
         default=100,
         help="output directory to save model",
     )
-
+    parser.add_argument(
+        "--warmupratio",
+        type=float,
+        default=0.12,
+        help="output directory to save model",
+    )
     parser.add_argument(
         "--output_path",
         type=str,
@@ -103,18 +109,18 @@ def main():
     if torch.cuda.device_count() > 1:
         model = nn.DataParallel(model)
 
-    LR_INIT = 0.01
-
+    LR_INIT = 5e-4
+    LR_END = 1e-6
     optimizer = Ranger(model.parameters(), lr=LR_INIT, weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, [60, 80], gamma=0.1)
 
     steps_per_epoch = len(train_dataset) // args.batch_size
-
+    TOTAL_STEPS = steps_per_epoch * args.epochs
+    WARMPUP_STEPS = TOTAL_STEPS * args.warmupratio
     GLOBAL_STEPS = 1
 
     model.train()
     decoder = {k: 0 for k in range(10)}
-
+    lr_params = (GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
     for epoch in range(args.epochs):
         fit_one_epoch(
             epoch,
@@ -122,12 +128,12 @@ def main():
             train_loader,
             optimizer,
             (GLOBAL_STEPS, steps_per_epoch),
+            lr_params,
         )
         torch.save(
             model.state_dict(),
             "{}/hrnet18v2_ranger{}.pth".format(args.output_path, epoch + 1),
         )
-        scheduler.step()
 
 
 if __name__ == "__main__":

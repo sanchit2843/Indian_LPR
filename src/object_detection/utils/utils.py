@@ -23,3 +23,20 @@ transformation = transforms.Compose([transforms.ToPILImage(), transforms.ToTenso
 def preprocess_image(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     image = transforms.Normalize(mean=mean, std=std)(transformation(image))
     return torch.unsqueeze(image, dim=0)
+
+
+def lr_func(GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END):
+    if GLOBAL_STEPS < WARMPUP_STEPS:
+        lr = GLOBAL_STEPS / WARMPUP_STEPS * LR_INIT
+    else:
+        lr = LR_END + 0.5 * (LR_INIT - LR_END) * (
+            (
+                1
+                + math.cos(
+                    (GLOBAL_STEPS - WARMPUP_STEPS)
+                    / (TOTAL_STEPS - WARMPUP_STEPS)
+                    * math.pi
+                )
+            )
+        )
+    return float(lr)
