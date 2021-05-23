@@ -37,7 +37,7 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
 
         cost_time = int((end_time - start_time) * 1000)
 
-        if epoch_step % 200 == 0:
+        if epoch_step % 1 == 0:
             print(
                 "global_steps:%d epoch:%d steps:%d/%d cls_loss:%.4f cnt_loss:%.4f reg_loss:%.4f total_loss:%.4f cost_time:%dms lr=%.4e"
                 % (
@@ -55,6 +55,7 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
             )
 
         GLOBAL_STEPS += 1
+    return GLOBAL_STEPS
 
 
 def main():
