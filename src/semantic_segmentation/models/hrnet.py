@@ -9,7 +9,7 @@ import torch._utils
 import torch.nn.functional as F
 
 
-def hrnet(n_classes):
+def hrnet(n_classes=2):
 
     encoder = HighResolutionNet()
     decoder = C1(n_classes)

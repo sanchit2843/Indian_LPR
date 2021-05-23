@@ -5,6 +5,8 @@ import os
 from torchvision import transforms
 import torch
 from PIL import Image, ImageDraw
+from scipy.spatial import distance
+import matplotlib.pyplot as plt
 
 
 class AverageMeter(object):
@@ -62,7 +64,7 @@ def overlay_colour(prediction, frame, centroid):
     return frame
 
 
-def plate_locate(image, size_factor=1, area_thresh=600):
+def plate_locate(rgb, image, size_factor=1, area_thresh=600):
 
     cnts = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
@@ -78,7 +80,6 @@ def plate_locate(image, size_factor=1, area_thresh=600):
 
         temp_rect = []
         rect = cv2.minAreaRect(c)
-
         centroid.append(rect)
         temp_rect.append(rect[0][0])
         temp_rect.append(rect[0][1])
@@ -93,17 +94,46 @@ def plate_locate(image, size_factor=1, area_thresh=600):
         )
 
         box = cv2.boxPoints(rect)
-        box = np.int0(box)
-        box = [[max(0, x[0]), max(0, x[1])] for x in box]
+        box = np.uint8(box)
+        box = [[max(0, int(x[0])), max(0, int(x[1]))] for x in box]
         coordinates.append(box)
 
     return coordinates, centroid
 
 
+import matplotlib.pyplot as plt
+
+
+def get_warped_plates(rgb_image, coordinates):
+    cropped_images = []
+
+    for box in coordinates:
+
+        height = int(distance.euclidean(box[0], box[1]))
+        width = int(distance.euclidean(box[1], box[2]))
+
+        src_pts = np.array(box).astype("float32")
+        dst_pts = np.array(
+            [[0, height - 1], [0, 0], [width - 1, 0], [width - 1, height - 1]],
+            dtype="float32",
+        )
+
+        M = cv2.getPerspectiveTransform(src_pts, dst_pts)
+
+        warped = cv2.warpPerspective(rgb_image, M, (width, height))
+
+        if width < height:
+            warped = cv2.rotate(warped, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+        cropped_images.append(warped)
+
+    return cropped_images
+
+
 transformation = transforms.Compose([transforms.ToPILImage(), transforms.ToTensor()])
 
 
-def preprocess_image(image, mean, std):
+def preprocess_image(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     image = transforms.Normalize(mean=mean, std=std)(transformation(image))
     return torch.unsqueeze(image, dim=0)
 
@@ -144,17 +174,18 @@ def convert_coordinates_to_bbox(coordinates):
     return boxes
 
 
-def upsample_boxes(boxes, prediction_shape, image_shape):
+def upsample_coordinates(coordinates, prediction_shape, image_shape):
     p_h, p_w = prediction_shape
-    i_h, i_w = image_shape
+    i_h, i_w, _ = image_shape
+    coordinates_new = []
     boxes_new = []
-    for b in boxes:
-        x1 = int(b[0] * i_w / p_w)
-        y1 = int(b[1] * i_h / p_h)
-        x2 = int(b[2] * i_w / p_w)
-        y2 = int(b[3] * i_h / p_h)
-        boxes_new.append([x1, y1, x2, y2])
-    return boxes_new
+
+    for c in coordinates:
+        coordinates_new.append(
+            [[int(x[0] * i_w / p_w), int(x[1] * i_h / p_h)] for x in c]
+        )
+    boxes_new = convert_coordinates_to_bbox(coordinates_new)
+    return coordinates_new, boxes_new
 
 
 def convert_x_y_tuple_to_xy_list(poly):

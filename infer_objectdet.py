@@ -9,8 +9,8 @@ import argparse
 import cv2
 import torch
 
-from src.Licence_Plate_Recognition.model.LPRNet import build_lprnet
-from src.Licence_Plate_Recognition.test_LPRNet import Greedy_Decode_inference
+from src.License_Plate_Recognition.model.LPRNet import build_lprnet
+from src.License_Plate_Recognition.test_LPRNet import Greedy_Decode_inference
 
 import numpy as np
 import json

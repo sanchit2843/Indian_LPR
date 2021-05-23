@@ -34,9 +34,9 @@ def validate_one_epoch(model, eval_loader, args, decoder):
 
             prediction = model(image)
 
-            prediction_softmax = nn.Softmax(dim=1)(prediction["output"][0])
+            prediction_softmax = nn.Softmax(dim=1)(prediction["output"])
             prediction = (
-                torch.argmax(prediction["output"][0], dim=1)
+                torch.argmax(prediction["output"], dim=1)
                 .detach()
                 .cpu()
                 .squeeze(dim=0)
