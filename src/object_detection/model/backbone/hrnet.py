@@ -1,26 +1,49 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from torch import nn as nn
+import torch
+import os
+import numpy as np
+import torch._utils
+import torch.nn.functional as F
+
+
+def hrnet(n_classes=2):
+
+    encoder = HighResolutionNet()
+    decoder = C1(n_classes)
+
+    class model(nn.Module):
+        def __init__(self, encoder, decoder):
+            super(model, self).__init__()
+            self.encoder = encoder
+            self.decoder = decoder
+
+        def forward(self, x, segSize=None):
+            enc_out = self.encoder(x)
+            out = self.decoder(enc_out, segSize)
+            return {"output": out}
+
+    m = init_weights(model(encoder, decoder))
+    return m
+
+
+def init_weights(model):
+    for m in model.modules():
+        if isinstance(m, nn.Conv2d):
+            nn.init.normal_(m.weight, std=0.001)
+        elif isinstance(m, nn.BatchNorm2d):
+            nn.init.constant_(m.weight, 1)
+            nn.init.constant_(m.bias, 0)
+    return model
+
+
 # ------------------------------------------------------------------------------
 # Copyright (c) Microsoft
 # Licensed under the MIT License.
 # Written by Ke Sun (sunk@mail.ustc.edu.cn)
 # ------------------------------------------------------------------------------
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import os
-import logging
-import functools
-
-import numpy as np
-
-import torch
-import torch.nn as nn
-import torch._utils
-import torch.nn.functional as F
-
-__all__ = ["hrnetv2"]
-# from .sync_bn.inplace_abn.bn import InPlaceABNSync
 
 BatchNorm2d = nn.BatchNorm2d
 BN_MOMENTUM = 0.01
@@ -40,7 +63,7 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = BatchNorm2d(planes, momentum=BN_MOMENTUM)
-        self.relu = nn.ReLU(inplace=False)
+        self.relu = nn.ReLU()
         self.conv2 = conv3x3(planes, planes)
         self.bn2 = BatchNorm2d(planes, momentum=BN_MOMENTUM)
         self.downsample = downsample
@@ -80,7 +103,7 @@ class Bottleneck(nn.Module):
             planes, planes * self.expansion, kernel_size=1, bias=False
         )
         self.bn3 = BatchNorm2d(planes * self.expansion, momentum=BN_MOMENTUM)
-        self.relu = nn.ReLU(inplace=False)
+        self.relu = nn.ReLU()
         self.downsample = downsample
         self.stride = stride
 
@@ -133,7 +156,7 @@ class HighResolutionModule(nn.Module):
             num_branches, blocks, num_blocks, num_channels
         )
         self.fuse_layers = self._make_fuse_layers()
-        self.relu = nn.ReLU(inplace=False)
+        self.relu = nn.ReLU()
 
     def _check_branches(
         self, num_branches, blocks, num_blocks, num_inchannels, num_channels
@@ -265,7 +288,7 @@ class HighResolutionModule(nn.Module):
                                     BatchNorm2d(
                                         num_outchannels_conv3x3, momentum=BN_MOMENTUM
                                     ),
-                                    nn.ReLU(inplace=False),
+                                    nn.ReLU(),
                                 )
                             )
                     fuse_layer.append(nn.Sequential(*conv3x3s))
@@ -304,12 +327,8 @@ class HighResolutionModule(nn.Module):
         return x_fuse
 
 
-blocks_dict = {"BASIC": BasicBlock, "BOTTLENECK": Bottleneck}
-
-
 class HighResolutionNet(nn.Module):
-    def __init__(self, config, **kwargs):
-        extra = config["EXTRA"]
+    def __init__(self, **kwargs):
         super(HighResolutionNet, self).__init__()
 
         # stem net
@@ -317,18 +336,34 @@ class HighResolutionNet(nn.Module):
         self.bn1 = BatchNorm2d(64, momentum=BN_MOMENTUM)
         self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1, bias=False)
         self.bn2 = BatchNorm2d(64, momentum=BN_MOMENTUM)
-        self.relu = nn.ReLU(inplace=False)
+        self.relu = nn.ReLU()
 
-        self.stage1_cfg = extra["STAGE1"]
+        self.stage1_cfg = {
+            "NUM_MODULES": 1,
+            "NUM_BRANCHES": 1,
+            "BLOCK": Bottleneck,
+            "NUM_BLOCKS": [1],
+            "NUM_CHANNELS": [32],
+            "FUSE_METHOD": "SUM",
+        }
+
         num_channels = self.stage1_cfg["NUM_CHANNELS"][0]
-        block = blocks_dict[self.stage1_cfg["BLOCK"]]
+        block = self.stage1_cfg["BLOCK"]
         num_blocks = self.stage1_cfg["NUM_BLOCKS"][0]
         self.layer1 = self._make_layer(block, 64, num_channels, num_blocks)
         stage1_out_channel = block.expansion * num_channels
 
-        self.stage2_cfg = extra["STAGE2"]
+        self.stage2_cfg = {
+            "NUM_MODULES": 1,
+            "NUM_BRANCHES": 2,
+            "BLOCK": BasicBlock,
+            "NUM_BLOCKS": [2, 2],
+            "NUM_CHANNELS": [16, 32],
+            "FUSE_METHOD": "SUM",
+        }
+
         num_channels = self.stage2_cfg["NUM_CHANNELS"]
-        block = blocks_dict[self.stage2_cfg["BLOCK"]]
+        block = self.stage2_cfg["BLOCK"]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))
         ]
@@ -339,9 +374,16 @@ class HighResolutionNet(nn.Module):
             self.stage2_cfg, num_channels
         )
 
-        self.stage3_cfg = extra["STAGE3"]
+        self.stage3_cfg = {
+            "NUM_MODULES": 1,
+            "NUM_BRANCHES": 3,
+            "BLOCK": BasicBlock,
+            "NUM_BLOCKS": [2, 2, 2],
+            "NUM_CHANNELS": [16, 32, 64],
+            "FUSE_METHOD": "SUM",
+        }
         num_channels = self.stage3_cfg["NUM_CHANNELS"]
-        block = blocks_dict[self.stage3_cfg["BLOCK"]]
+        block = self.stage3_cfg["BLOCK"]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))
         ]
@@ -350,9 +392,16 @@ class HighResolutionNet(nn.Module):
             self.stage3_cfg, num_channels
         )
 
-        self.stage4_cfg = extra["STAGE4"]
+        self.stage4_cfg = {
+            "NUM_MODULES": 1,
+            "NUM_BRANCHES": 4,
+            "BLOCK": BasicBlock,
+            "NUM_BLOCKS": [2, 2, 2, 2],
+            "NUM_CHANNELS": [16, 32, 64, 128],
+            "FUSE_METHOD": "SUM",
+        }
         num_channels = self.stage4_cfg["NUM_CHANNELS"]
-        block = blocks_dict[self.stage4_cfg["BLOCK"]]
+        block = self.stage4_cfg["BLOCK"]
         num_channels = [
             num_channels[i] * block.expansion for i in range(len(num_channels))
         ]
@@ -362,23 +411,6 @@ class HighResolutionNet(nn.Module):
         )
 
         last_inp_channels = np.int(np.sum(pre_stage_channels))
-
-        # self.last_layer = nn.Sequential(
-        #     nn.Conv2d(
-        #         in_channels=last_inp_channels,
-        #         out_channels=last_inp_channels,
-        #         kernel_size=1,
-        #         stride=1,
-        #         padding=0),
-        #     BatchNorm2d(last_inp_channels, momentum=BN_MOMENTUM),
-        #     nn.ReLU(inplace=False),
-        #     nn.Conv2d(
-        #         in_channels=last_inp_channels,
-        #         out_channels=config.model.n_classes,
-        #         kernel_size=extra.FINAL_CONV_KERNEL,
-        #         stride=1,
-        #         padding=1 if extra.FINAL_CONV_KERNEL == 3 else 0)
-        # )
 
     def _make_transition_layer(self, num_channels_pre_layer, num_channels_cur_layer):
         num_branches_cur = len(num_channels_cur_layer)
@@ -401,7 +433,7 @@ class HighResolutionNet(nn.Module):
                             BatchNorm2d(
                                 num_channels_cur_layer[i], momentum=BN_MOMENTUM
                             ),
-                            nn.ReLU(inplace=False),
+                            nn.ReLU(),
                         )
                     )
                 else:
@@ -419,7 +451,7 @@ class HighResolutionNet(nn.Module):
                         nn.Sequential(
                             nn.Conv2d(inchannels, outchannels, 3, 2, 1, bias=False),
                             BatchNorm2d(outchannels, momentum=BN_MOMENTUM),
-                            nn.ReLU(inplace=False),
+                            nn.ReLU(),
                         )
                     )
                 transition_layers.append(nn.Sequential(*conv3x3s))
@@ -453,7 +485,7 @@ class HighResolutionNet(nn.Module):
         num_branches = layer_config["NUM_BRANCHES"]
         num_blocks = layer_config["NUM_BLOCKS"]
         num_channels = layer_config["NUM_CHANNELS"]
-        block = blocks_dict[layer_config["BLOCK"]]
+        block = layer_config["BLOCK"]
         fuse_method = layer_config["FUSE_METHOD"]
 
         modules = []
@@ -506,6 +538,11 @@ class HighResolutionNet(nn.Module):
                 x_list.append(y_list[i])
         y_list = self.stage3(x_list)
 
+        x0_h, x0_w = y_list[0].size(2), y_list[0].size(3)
+        x1 = F.upsample(y_list[1], size=(x0_h, x0_w), mode="bilinear")
+        x2 = F.upsample(y_list[2], size=(x0_h, x0_w), mode="bilinear")
+        x_stage3 = torch.cat([y_list[0], x1, x2], 1)
+
         x_list = []
         for i in range(self.stage4_cfg["NUM_BRANCHES"]):
             if self.transition3[i] is not None:
@@ -518,13 +555,6 @@ class HighResolutionNet(nn.Module):
         x = self.stage4(x_list)
 
         # Upsampling
-        # x0_h, x0_w = x[0].size(2), x[0].size(3)
-        # x1 = F.upsample(x[1], size=(x0_h, x0_w), mode="bilinear")
-        # x2 = F.upsample(x[2], size=(x0_h, x0_w), mode="bilinear")
-        # x3 = F.upsample(x[3], size=(x0_h, x0_w), mode="bilinear")
-
-        # x = self.last_layer(x)
-
         return x
 
     def init_weights(
@@ -550,9 +580,8 @@ class HighResolutionNet(nn.Module):
 
 def hrnetv2(**kwargs):
     # cfg =
-    with open("src/object_detection/model/backbone/hrnet18v1.yaml") as f:
-        file = yaml.load(f)
-    model = HighResolutionNet(file, **kwargs)
+
+    model = HighResolutionNet(**kwargs)
     return model
 
 

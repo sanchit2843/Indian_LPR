@@ -1,13 +1,13 @@
-from src.object_detection.model.fcos import FCOSDetector
+from model.fcos import FCOSDetector
 import torch
-from src.object_detection.dataloader.custom_dataset import YoloDataset
+from dataloader.custom_dataset import YoloDataset
 import math, time
-from src.object_detection.utils.ranger import Ranger
+from utils.ranger import Ranger
 from torch import nn
 import os
 import argparse
-from src.object_detection.eval import validate_one_epoch
-from src.object_detection.utils.utils import lr_func
+from eval import validate_one_epoch
+from utils.utils import lr_func
 
 
 def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):

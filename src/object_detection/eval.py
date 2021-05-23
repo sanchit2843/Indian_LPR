@@ -3,18 +3,18 @@ import numpy as np
 import cv2
 import pandas as pd
 import os
-from src.object_detection.model.fcos import FCOSDetector
-from src.object_detection.dataloader.custom_dataset import YoloDataset
+from model.fcos import FCOSDetector
+from dataloader.custom_dataset import YoloDataset
 from torch import nn
 from torchvision import transforms
 import matplotlib.pyplot as plt
 from tqdm import tqdm
-from src.object_detection.object_detection_metrics_calculation.main import (
+from object_detection_metrics_calculation.main import (
     get_coco_metrics_from_path,
 )
-from src.object_detection.object_detection_metrics_calculation.utils import write_txt
+from object_detection_metrics_calculation.utils import write_txt
 import argparse
-from src.object_detection.utils.utils import sort_by_score
+from utils.utils import sort_by_score
 
 
 def validate_one_epoch(model, eval_loader, output_path, decoder):
