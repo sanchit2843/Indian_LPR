@@ -95,6 +95,8 @@ class classDataset(Dataset):
         """
         image = cv2.imread(self.csv_file[idx, 0], cv2.IMREAD_COLOR)
         label = cv2.imread(self.csv_file[idx, 1], cv2.IMREAD_GRAYSCALE)
+
+        # remove this if n_classes>2
         label[label > 1] = 1
         if (
             image.shape[1] == self.width

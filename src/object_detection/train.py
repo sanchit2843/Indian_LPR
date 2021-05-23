@@ -123,7 +123,7 @@ def main():
     GLOBAL_STEPS = 1
 
     model.train()
-    decoder = {k: 0 for k in range(10)}
+
     lr_params = (GLOBAL_STEPS, TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
     for epoch in range(args.epochs):
         GLOBAL_STEPS = fit_one_epoch(

@@ -178,7 +178,7 @@ def main():
 
     args = parser.parse_args()
 
-    validate = True
+    validate = False
 
     if os.path.exists(os.path.join(args.csvpath, "valid.csv")):
         validate = True
@@ -225,13 +225,13 @@ def main():
             epoch, args.n_epoch, model, train_loader, criterion, optimizer, lr_scheduler
         )
         torch.save(
-            args.output_dir,
             "epoch {}".format(epoch),
             {
                 "state_dict": model.state_dict(),
-                "epoch": model,
+                "epoch": epoch,
                 "optimizer_state_dict": optimizer.state_dict(),
             },
+            args.output_dir,
         )
 
         if validate:
