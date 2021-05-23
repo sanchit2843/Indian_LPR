@@ -12,7 +12,7 @@ from src.object_detection.utils.utils import lr_func
 
 def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
     GLOBAL_STEPS, steps_per_epoch = steps
-    GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END = lr_params
+    GLOBAL_STEPS, TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END = lr_params
 
     for epoch_step, data in enumerate(train_loader):
 
@@ -21,7 +21,7 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
 
         batch_boxes = batch_boxes.cuda()
         batch_classes = batch_classes.cuda()
-        lr_params = (GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
+        lr_params = (GLOBAL_STEPS, TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
         lr = lr_func(*lr_params)
         for param in optimizer.param_groups:
             param["lr"] = lr
@@ -123,7 +123,7 @@ def main():
 
     model.train()
     decoder = {k: 0 for k in range(10)}
-    lr_params = (GLOBAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
+    lr_params = (GLOBAL_STEPS, TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
     for epoch in range(args.epochs):
         GLOBAL_STEPS = fit_one_epoch(
             epoch,
