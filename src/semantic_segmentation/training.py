@@ -5,14 +5,14 @@ import argparse
 import os
 import sys
 from torch.utils.data import DataLoader
-from src.semantic_segmentation.utils.util import *
+from utils.util import *
 import torch.nn.functional as F
-from src.semantic_segmentation.datasetcClass import classDataset
-from src.semantic_segmentation.models.hrnet import hrnet
+from datasetcClass import classDataset
+from models.hrnet import hrnet
 
-from src.semantic_segmentation.utils.ranger import Ranger
-from src.semantic_segmentation.utils.lr_scheduler import polylr
-from src.semantic_segmentation.utils.metrics import get_metrics_values
+from utils.ranger import Ranger
+from utils.lr_scheduler import polylr
+from utils.metrics import get_metrics_values
 
 
 def train(epoch, n_epochs, model, data_loader, criterion, optimizer, scheduler=None):

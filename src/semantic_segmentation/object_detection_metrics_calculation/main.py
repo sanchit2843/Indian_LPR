@@ -1,12 +1,12 @@
 import os
-from src.semantic_segmentation.object_detection_metrics_calculation.src.coco_evaluator import (
+from object_detection_metrics_calculation.src.coco_evaluator import (
     get_coco_summary,
 )
-from src.semantic_segmentation.object_detection_metrics_calculation.src.bounding_box import (
+from object_detection_metrics_calculation.src.bounding_box import (
     BoundingBox,
 )
 import argparse
-from src.semantic_segmentation.object_detection_metrics_calculation.src.enumerators import (
+from object_detection_metrics_calculation.src.enumerators import (
     CoordinatesType,
     BBType,
     BBFormat,

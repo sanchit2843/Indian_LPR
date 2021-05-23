@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 # /usr/bin/env/python3
 
-from src.License_Plate_Recognition.data.load_data import (
+from data.load_data import (
     CHARS,
     CHARS_DICT,
     LPRDataLoader,
 )
-from src.License_Plate_Recognition.model.LPRNet import build_lprnet
+from model.LPRNet import build_lprnet
 from PIL import Image
 
 # import torch.backends.cudnn as cudnn

@@ -6,7 +6,7 @@ import numpy as np
 import random
 import cv2
 import os
-from src.License_Plate_Recognition.misc.separator import *
+from misc.separator import *
 
 
 CHARS = [

@@ -19,7 +19,7 @@
 from collections import defaultdict
 
 import numpy as np
-from src.semantic_segmentation.object_detection_metrics_calculation.src.bounding_box import (
+from object_detection_metrics_calculation.src.bounding_box import (
     BBFormat,
 )
 
