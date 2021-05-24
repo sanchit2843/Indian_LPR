@@ -52,7 +52,7 @@ classes = {
 }
 
 
-def overlay_colour(prediction, frame, centroid):
+def overlay_colour(frame, centroid):
 
     temp_img = frame.copy()
     for i in range(len(centroid)):
@@ -64,7 +64,7 @@ def overlay_colour(prediction, frame, centroid):
     return frame
 
 
-def plate_locate(rgb, image, size_factor=1, area_thresh=600):
+def plate_locate(image, size_factor=1, area_thresh=600):
 
     cnts = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
@@ -94,7 +94,7 @@ def plate_locate(rgb, image, size_factor=1, area_thresh=600):
         )
 
         box = cv2.boxPoints(rect)
-        box = np.uint8(box)
+        box = np.int0(box)
         box = [[max(0, int(x[0])), max(0, int(x[1]))] for x in box]
         coordinates.append(box)
 
@@ -136,6 +136,23 @@ transformation = transforms.Compose([transforms.ToPILImage(), transforms.ToTenso
 def preprocess_image(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     image = transforms.Normalize(mean=mean, std=std)(transformation(image))
     return torch.unsqueeze(image, dim=0)
+
+
+def postprocess_image(image, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
+    inv_normalize = transforms.Compose(
+        [
+            transforms.Normalize(
+                mean=[0.0, 0.0, 0.0], std=[1 / std[0], 1 / std[1], 1 / std[2]]
+            ),
+            transforms.Normalize(
+                mean=[-1 * mean[0], -1 * mean[1], -1 * mean[2]], std=[1.0, 1.0, 1.0]
+            ),
+        ]
+    )
+    image = inv_normalize(image)
+    return (
+        (image * 255).squeeze(0).permute(1, 2, 0).cpu().numpy().astype(np.uint8).copy()
+    )
 
 
 def convert_yolotxtline_to_bboxes(current_line):
@@ -201,8 +218,10 @@ def convert_polylist_to_tuple(poly):
     return [(x[0], x[1]) for x in poly]
 
 
-def get_score_from_prediction(prediction_softmax, coordinates):
+def get_score_and_class_from_prediction(prediction, prediction_softmax, coordinates):
     scores = []
+    classes = []
+
     mask = np.zeros(
         (
             prediction_softmax.shape[2],
@@ -210,13 +229,27 @@ def get_score_from_prediction(prediction_softmax, coordinates):
         ),
         dtype=np.uint8,
     )
-    prediction_desired_class = prediction_softmax[0, 1, :, :].cpu().numpy()
+
+    prediction_desired_class = prediction_softmax[0, 0, :, :].cpu().numpy()
 
     for poly in coordinates:
         mask = Image.fromarray(mask)
         draw = ImageDraw.Draw(mask)
         draw.polygon(xy=convert_polylist_to_tuple(poly), outline=1, fill=1)
         mask = np.asarray(mask)
-        scores.append(np.sum(prediction_desired_class * mask) / np.sum(mask))
 
-    return scores
+        value, count = np.unique(prediction * mask, return_counts=True)
+        # remove 0 from value and count
+        value = list(value)
+        count = list(count)
+        del count[value.index(0)]
+        value.remove(0)
+
+        desired_class = value[np.argmax(count)]
+        classes.append(desired_class)
+        scores.append(
+            np.sum(prediction_softmax[0, desired_class, :, :].cpu().numpy() * mask)
+            / np.sum(mask)
+        )
+
+    return classes, scores

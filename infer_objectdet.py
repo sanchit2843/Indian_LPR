@@ -14,6 +14,7 @@ from src.License_Plate_Recognition.test_LPRNet import Greedy_Decode_inference
 
 import numpy as np
 import json
+from tqdm import tqdm
 
 
 def run_single_frame(od_model, lprnet, image):
@@ -72,7 +73,7 @@ def plot_single_frame_from_out_dict(image, dict):
 
 def process_directory(args, od_model, lprnet):
 
-    for i in os.listdir(args.source):
+    for i in tqdm(os.listdir(args.source)):
 
         if os.path.splitext(i)[1] in [".avi", ".mp4"]:
             process_video(

@@ -5,7 +5,7 @@
 test pretrained model.
 """
 
-from data.load_data import (
+from .data.load_data import (
     CHARS,
     CHARS_DICT,
     LPRDataLoader,
@@ -16,7 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 from torch.utils.data import DataLoader
 
 # import torch.backends.cudnn as cudnn
-from model.LPRNet import build_lprnet
+from .model.LPRNet import build_lprnet
 
 from torch.autograd import Variable
 import torch.nn.functional as F

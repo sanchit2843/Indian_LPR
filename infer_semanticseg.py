@@ -19,6 +19,7 @@ from src.License_Plate_Recognition.test_LPRNet import Greedy_Decode_inference
 
 import numpy as np
 import json
+from tqdm import tqdm
 
 
 def run_single_frame(semantic_model, lprnet, image, conf_thresh):
@@ -37,7 +38,7 @@ def run_single_frame(semantic_model, lprnet, image, conf_thresh):
     if torch.cuda.is_available():
         image = image.cuda()
     with torch.no_grad():
-        out = semantic_model(image)
+        out = semantic_model(image, (image.shape[2], image.shape[3]))
         prediction_softmax = nn.Softmax(dim=1)(out["output"])
         out = (
             torch.argmax(out["output"], dim=1)
@@ -47,7 +48,6 @@ def run_single_frame(semantic_model, lprnet, image, conf_thresh):
             .numpy()
             .astype(np.uint8)
         )
-        # change plate_locate code to return class for predicted plate as well and return cropped images as well.
 
         coordinates, _ = plate_locate(original_image, out)
         scores = get_score_from_prediction(prediction_softmax, coordinates)
@@ -65,7 +65,7 @@ def run_single_frame(semantic_model, lprnet, image, conf_thresh):
         )
 
     if len(boxes) == 0:
-        return None
+        return {0: {"coordinates": [], "boxes": [], "label": ""}}
 
     plate_images = get_warped_plates(original_image, coordinates)
     plate_images_tensor = []
@@ -88,6 +88,8 @@ def run_single_frame(semantic_model, lprnet, image, conf_thresh):
 def plot_single_frame_from_out_dict(image, dict):
     for _, v in dict.items():
         coordinates, box, label = v["coordinates"], v["boxes"], v["label"]
+        if len(coordinates) == 0:
+            continue
         image = cv2.rectangle(
             image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), thickness=2
         )
@@ -99,7 +101,7 @@ def plot_single_frame_from_out_dict(image, dict):
 
 def process_directory(args, semantic_model, lprnet):
 
-    for i in os.listdir(args.source):
+    for i in tqdm(os.listdir(args.source)):
 
         if os.path.splitext(i)[1] in [".avi", ".mp4"]:
             process_video(
@@ -109,23 +111,23 @@ def process_directory(args, semantic_model, lprnet):
         if os.path.splitext(i)[1] in [".png", ".jpg"]:
             image = cv2.imread(os.path.join(args.source, i))
             out_dict = run_single_frame(semantic_model, lprnet, image, args.conf_thresh)
-            if out_dict:
-                plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
-                cv2.imwrite(
-                    os.path.join(args.output_path, "plots", i),
-                    plotted_image,
-                )
+            plotted_image = plot_single_frame_from_out_dict(image, out_dict)
 
-                with open(
-                    os.path.join(
-                        args.output_path,
-                        "jsons",
-                        i.replace("jpg", "json").replace("png", "json"),
-                    ),
-                    "w",
-                ) as outfile:
-                    json.dump({args.source.split("/")[-1]: out_dict}, outfile)
+            cv2.imwrite(
+                os.path.join(args.output_path, "plots", i),
+                plotted_image,
+            )
+
+            with open(
+                os.path.join(
+                    args.output_path,
+                    "jsons",
+                    i.replace("jpg", "json").replace("png", "json"),
+                ),
+                "w",
+            ) as outfile:
+                json.dump({args.source.split("/")[-1]: out_dict}, outfile)
 
     return
 
@@ -224,7 +226,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--conf_thresh",
         type=int,
-        default=0.75,
+        default=0.5,
         help="output directory to save plotted images and text files with results",
     )
     parser.add_argument(
@@ -242,6 +244,7 @@ if __name__ == "__main__":
     # load object detection model
 
     semantic_model = hrnet().eval()
+    semantic_model = nn.SyncBatchNorm.convert_sync_batchnorm(semantic_model)
     semantic_model = nn.DataParallel(semantic_model)
     semantic_model.load_state_dict(
         torch.load(

@@ -14,65 +14,54 @@ from object_detection_metrics_calculation.main import (
 )
 from object_detection_metrics_calculation.utils import write_txt
 import argparse
-from utils.utils import sort_by_score
+from utils.utils import sort_by_score, convert_yolotxtline_to_bboxes, preprocess_image
 
 
-def validate_one_epoch(model, eval_loader, output_path, decoder):
-    gt_boxes = []
-    gt_classes = []
-    pred_boxes = []
-    pred_classes = []
-    pred_scores = []
+def validate_one_epoch(model, txt_file, output_path, decoder):
 
-    for i, [img, boxes, classes, paths] in tqdm(enumerate(eval_loader)):
+    valid_txt = open(txt_file, "r")
+
+    for i, current_line in tqdm(enumerate(valid_txt.readlines())):
+
+        path, boxes, classes = convert_yolotxtline_to_bboxes(current_line)
+        frame = cv2.imread(path)
+        image = preprocess_image(frame)
 
         with torch.no_grad():
-            out = model(img.cuda())
-            pred_boxes.append(out[2][0].cpu().numpy())
-            pred_classes.append(out[1][0].cpu().numpy())
-            pred_scores.append(out[0][0].cpu().numpy())
+            out = model(image.cuda())
 
-        gt_boxes.append(boxes[0].numpy())
-        gt_classes.append(classes[0].numpy())
-        pred_boxes, pred_classes, pred_scores = sort_by_score(
-            pred_boxes, pred_classes, pred_scores
-        )
+        # use function to  plot images from txt
+        # frame = frame.copy()
 
-        frame = frame.copy()
-        for bbox in boxes[0].numpy():
-            frame = cv2.rectangle(
-                frame,
-                (bbox[0], bbox[1]),
-                (bbox[2], bbox[3]),
-                color=(0, 0, 255),
-                thickness=4,
-            )
-        for bbox in out[2][0].cpu().numpy():
-            frame = cv2.rectangle(
-                frame,
-                (int(bbox[0]), int(bbox[1])),
-                (int(bbox[2]), int(bbox[3])),
-                color=(255, 255, 0),
-                thickness=3,
-            )
-        cv2.imwrite(
-            os.path.join(output_path, "plotted_images", paths[0].split("/")[-1]),
-            frame,
-        )
+        # for bbox in boxes:
+        #     frame = cv2.rectangle(
+        #         frame,
+        #         (bbox[0], bbox[1]),
+        #         (bbox[2], bbox[3]),
+        #         color=(0, 0, 255),
+        #         thickness=2,
+        #     )
+
+        # for bbox in out[2][0].cpu().numpy():
+        #     frame = cv2.rectangle(
+        #         frame,
+        #         (int(bbox[0]), int(bbox[1])),
+        #         (int(bbox[2]), int(bbox[3])),
+        #         color=(255, 0, 0),
+        #         thickness=2,
+        #     )
+        # cv2.imwrite(
+        #     os.path.join(output_path, "plotted_images", path.split("/")[-1]),
+        #     frame,
+        # )
 
         write_txt(
-            (boxes[0].numpy(), classes[0].numpy()),
+            (boxes, classes),
             (out[2][0].cpu().numpy(), out[1][0].cpu().numpy(), out[0][0].cpu().numpy()),
             decoder,
-            paths[0].split("/")[-1],
+            path.split("/")[-1],
             output_path,
         )
-
-        pred_boxes = []
-        pred_scores = []
-        pred_classes = []
-        gt_boxes = []
-        gt_classes = []
 
     _, all_img_metrics = get_coco_metrics_from_path(os.path.join(output_path))
     return all_img_metrics
@@ -106,15 +95,6 @@ if __name__ == "__main__":
 
     decoder = {k: 0 for k in range(10)}
 
-    eval_dataset = YoloDataset(
-        args.txt_path,
-        train=False,
-    )
-
-    eval_loader = torch.utils.data.DataLoader(
-        eval_dataset, batch_size=1, shuffle=False, collate_fn=eval_dataset.collate_fn
-    )
-
     model = FCOSDetector(mode="inference")
 
     model.load_state_dict(
@@ -130,4 +110,7 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(args.output_path, "detections"), exist_ok=True)
     os.makedirs(os.path.join(args.output_path, "plotted_images"), exist_ok=True)
 
-    all_img_metrics = validate_one_epoch(model, eval_loader, args.output_path, decoder)
+    all_img_metrics = validate_one_epoch(
+        model, args.txt_path, args.output_path, decoder
+    )
+    print(all_img_metrics)

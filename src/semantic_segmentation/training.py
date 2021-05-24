@@ -66,6 +66,31 @@ def train(epoch, n_epochs, model, data_loader, criterion, optimizer, scheduler=N
     print("Epoch Loss", losses.avg)
 
 
+def reduce_loss(loss, reduction="mean"):
+    return (
+        loss.mean()
+        if reduction == "mean"
+        else loss.sum()
+        if reduction == "sum"
+        else loss
+    )
+
+
+class LabelSmoothingCrossEntropy(nn.Module):
+    def __init__(self, ε: float = 0.1, reduction="mean"):
+        super().__init__()
+        self.ε, self.reduction = ε, reduction
+
+    def forward(self, output, target):
+        # number of classes
+        c = output.size()[-1]
+        log_preds = F.log_softmax(output, dim=-1)
+        loss = reduce_loss(-log_preds.sum(dim=-1), self.reduction)
+        nll = F.nll_loss(log_preds, target, reduction=self.reduction)
+        # (1-ε)* H(q,p) + ε*H(u,p)
+        return (1 - self.ε) * nll + self.ε * (loss / c)
+
+
 def validate_model(
     epoch, model, data_loader, criterion, best_val_iou, n_classes, output_dir
 ):
@@ -179,7 +204,7 @@ def main():
     args = parser.parse_args()
 
     validate = False
-
+    os.makedirs(args.output_dir, exist_ok=True)
     if os.path.exists(os.path.join(args.csvpath, "valid.csv")):
         validate = True
 
@@ -205,7 +230,7 @@ def main():
         )
 
     model = hrnet(args.n_classes)
-    criterion = nn.CrossEntropyLoss(weight=torch.Tensor([0.005, 1]).cuda())
+    criterion = LabelSmoothingCrossEntropy(0.0).cuda()
 
     optimizer = Ranger(
         model.parameters(), lr=initial_learning_rate, weight_decay=weight_decay
@@ -224,14 +249,13 @@ def main():
         train(
             epoch, args.n_epoch, model, train_loader, criterion, optimizer, lr_scheduler
         )
+
         torch.save(
-            "epoch {}".format(epoch),
             {
                 "state_dict": model.state_dict(),
                 "epoch": epoch,
-                "optimizer_state_dict": optimizer.state_dict(),
             },
-            args.output_dir,
+            os.path.join(args.output_dir, "epoch_{}.pth".format(epoch)),
         )
 
         if validate:
