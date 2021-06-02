@@ -10,12 +10,11 @@ from eval import validate_one_epoch
 from utils.utils import lr_func
 
 
-def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
-    GLOBAL_STEPS, steps_per_epoch = steps
-    GLOBAL_STEPS, TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END = lr_params
+def fit_one_epoch(epoch, model, train_loader, optimizer, steps_per_epoch, lr_params):
+    TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END = lr_params
 
     for epoch_step, data in enumerate(train_loader):
-
+        GLOBAL_STEPS = epoch * steps_per_epoch + epoch_step
         batch_imgs, batch_boxes, batch_classes, _ = data
         batch_imgs = batch_imgs.cuda()
 
@@ -37,7 +36,7 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
 
         cost_time = int((end_time - start_time) * 1000)
 
-        if epoch_step % 1 == 0:
+        if epoch_step % 1000 == 0:
             print(
                 "global_steps:%d epoch:%d steps:%d/%d cls_loss:%.4f cnt_loss:%.4f reg_loss:%.4f total_loss:%.4f cost_time:%dms lr=%.4e"
                 % (
@@ -53,9 +52,6 @@ def fit_one_epoch(epoch, model, train_loader, optimizer, steps, lr_params):
                     lr,
                 )
             )
-
-        GLOBAL_STEPS += 1
-    return GLOBAL_STEPS
 
 
 def main():
@@ -120,18 +116,17 @@ def main():
     steps_per_epoch = len(train_dataset) // args.batch_size
     TOTAL_STEPS = steps_per_epoch * args.epochs
     WARMPUP_STEPS = TOTAL_STEPS * args.warmupratio
-    GLOBAL_STEPS = 1
 
     model.train()
 
-    lr_params = (GLOBAL_STEPS, TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
+    lr_params = (TOTAL_STEPS, WARMPUP_STEPS, LR_INIT, LR_END)
     for epoch in range(args.epochs):
-        GLOBAL_STEPS = fit_one_epoch(
+        fit_one_epoch(
             epoch,
             model,
             train_loader,
             optimizer,
-            (GLOBAL_STEPS, steps_per_epoch),
+            steps_per_epoch,
             lr_params,
         )
         torch.save(

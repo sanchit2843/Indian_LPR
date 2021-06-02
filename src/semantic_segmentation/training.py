@@ -230,7 +230,7 @@ def main():
         )
 
     model = hrnet(args.n_classes)
-    criterion = LabelSmoothingCrossEntropy(0.0).cuda()
+    criterion = nn.CrossEntropyLoss(weight=torch.Tensor([0.05, 1])).cuda()
 
     optimizer = Ranger(
         model.parameters(), lr=initial_learning_rate, weight_decay=weight_decay

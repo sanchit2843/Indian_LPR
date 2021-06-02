@@ -36,7 +36,7 @@ def validate_one_epoch(model, args, decoder):
 
         path, boxes, classes = convert_yolotxtline_to_bboxes(current_line)
         frame = cv2.imread(path)
-        image = preprocess_image(frame)
+        image = preprocess_image(frame).cuda()
 
         with torch.no_grad():
             prediction = model(image, (image.shape[2], image.shape[3]))
@@ -141,15 +141,10 @@ def main():
 
     args = parser.parse_args()
 
-    model = hrnet(args.n_classes)
+    model = hrnet(args.n_classes).eval().cuda()
 
     # remember to remove this sync batchnorm
     # model = nn.SyncBatchNorm.convert_sync_batchnorm(model)
-
-    model = nn.DataParallel(model).eval()
-
-    if torch.cuda.is_available():
-        model.cuda()
 
     model.load_state_dict(torch.load(args.weight_path)["state_dict"])
 
