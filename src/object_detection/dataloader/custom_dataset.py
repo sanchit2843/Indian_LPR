@@ -41,7 +41,7 @@ class YoloDataset(Dataset):
         self.pixel_aug = Compose(
             [
                 augmentation_pixel_techniques_pool["RandomBrightnessContrast"],
-                augmentation_pixel_techniques_pool["HueSaturationValue"],
+                # augmentation_pixel_techniques_pool["HueSaturationValue"],
             ]
         )
 
