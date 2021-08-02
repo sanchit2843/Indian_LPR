@@ -3,7 +3,7 @@ from src.semantic_segmentation.models.hrnet import hrnet
 from src.semantic_segmentation.utils.util import (
     get_warped_plates,
     plate_locate,
-    get_score_from_prediction,
+    get_score_and_class_from_prediction,
     preprocess_image,
     upsample_coordinates,
     convert_coordinates_to_bbox,
@@ -49,14 +49,15 @@ def run_single_frame(semantic_model, lprnet, image, conf_thresh):
             .astype(np.uint8)
         )
 
-        coordinates, _ = plate_locate(original_image, out)
-        scores = get_score_from_prediction(prediction_softmax, coordinates)
+        coordinates, _ = plate_locate(out)
+        scores = get_score_and_class_from_prediction(out,prediction_softmax, coordinates)
         pred_boxes = convert_coordinates_to_bbox(coordinates)
 
         pred_boxes_new = []
         coordinates_new = []
         for box, score, c in zip(pred_boxes, scores, coordinates):
-            if score > args.conf_thresh:
+
+            if score[0] > args.conf_thresh:
                 pred_boxes_new.append(box)
                 coordinates_new.append(c)
 
@@ -141,7 +142,7 @@ def frame_extract(path):
             yield image
 
 
-def process_video(video_path, semantic_model, lprnet, output_path):
+def process_video(video_path, semantic_model, lprnet, output_dir):
 
     current_video = cv2.VideoCapture(video_path)
     fps = current_video.get(cv2.CAP_PROP_FPS)
@@ -151,7 +152,7 @@ def process_video(video_path, semantic_model, lprnet, output_path):
         if idx == 0:
             out_video = cv2.VideoWriter(
                 os.path.join(
-                    args.output_dir, video_path.split("/")[-1].replace("mp4", "avi")
+                    output_dir, video_path.split("/")[-1].replace("mp4", "avi")
                 ),
                 cv2.VideoWriter_fourcc("M", "J", "P", "G"),
                 fps,
@@ -168,7 +169,7 @@ def process_video(video_path, semantic_model, lprnet, output_path):
     out_video.release()
     with open(
         os.path.join(
-            args.output_path,
+            output_dir,
             "jsons",
             video_path.split("/")[-1].replace("mp4", "json").replace("avi", "json"),
         ),
@@ -244,7 +245,8 @@ if __name__ == "__main__":
     # load object detection model
 
     semantic_model = hrnet().eval()
-    semantic_model = nn.SyncBatchNorm.convert_sync_batchnorm(semantic_model)
+    if torch.cuda.is_available():
+        semantic_model = nn.SyncBatchNorm.convert_sync_batchnorm(semantic_model)
     semantic_model = nn.DataParallel(semantic_model)
     semantic_model.load_state_dict(
         torch.load(
@@ -289,7 +291,7 @@ if __name__ == "__main__":
 
         if os.path.splitext(args.source)[1] in [".avi", ".mp4"]:
             print("source is video")
-            process_video(args.source, semantic_model, lprnet)
+            process_video(args.source, semantic_model, lprnet,args.output_path)
 
         if os.path.splitext(args.source)[1] == ".txt":
             print("source is txt, might need time to process")

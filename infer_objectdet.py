@@ -113,7 +113,7 @@ def frame_extract(path):
             yield image
 
 
-def process_video(video_path, od_model, lprnet, output_path):
+def process_video(video_path, od_model, lprnet, output_dir):
 
     current_video = cv2.VideoCapture(video_path)
     fps = current_video.get(cv2.CAP_PROP_FPS)
@@ -123,7 +123,7 @@ def process_video(video_path, od_model, lprnet, output_path):
         if idx == 0:
             out_video = cv2.VideoWriter(
                 os.path.join(
-                    args.output_dir, video_path.split("/")[-1].replace("mp4", "avi")
+                    output_dir, video_path.split("/")[-1].replace("mp4", "avi")
                 ),
                 cv2.VideoWriter_fourcc("M", "J", "P", "G"),
                 fps,
@@ -140,7 +140,7 @@ def process_video(video_path, od_model, lprnet, output_path):
     out_video.release()
     with open(
         os.path.join(
-            args.output_path,
+            output_dir,
             "jsons",
             video_path.split("/")[-1].replace("mp4", "json").replace("avi", "json"),
         ),
@@ -254,7 +254,7 @@ if __name__ == "__main__":
 
         if os.path.splitext(args.source)[1] in [".avi", ".mp4"]:
             print("source is video")
-            process_video(args.source, od_model, lprnet)
+            process_video(args.source, od_model, lprnet,args.output_path)
 
         if os.path.splitext(args.source)[1] == ".txt":
             print("source is txt, might need time to process")
