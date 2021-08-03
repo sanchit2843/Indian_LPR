@@ -65,6 +65,10 @@ def plot_single_frame_from_out_dict(im, out_dict,line_thickness=3,color = (255,0
     if out_dict:
       for _, v in out_dict.items():
         box, label = v["boxes"], v["label"]
+
+        if len(box) < 4:
+            continue
+
         tl = (
             line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1
         )  # line/font thickness
@@ -135,7 +139,7 @@ def process_video(video_path, od_model, lprnet, output_dir):
     current_video = cv2.VideoCapture(video_path)
     fps = current_video.get(cv2.CAP_PROP_FPS)
     final_dict = {}
-
+    print('processing {}'.format(video_path))
     for idx, frame in enumerate(frame_extract(video_path)):
         if idx == 0:
             out_video = cv2.VideoWriter(
@@ -275,6 +279,6 @@ if __name__ == "__main__":
 
         if os.path.splitext(args.source)[1] == ".txt":
             print("source is txt, might need time to process")
-            process_txt(args.source, od_model, lprnet)
+            process_txt(args, od_model, lprnet)
 
     print("processing done")
