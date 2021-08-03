@@ -1,21 +1,82 @@
 # Indian_LPR
 
 
-# Folder structure
-- Training
-  - Semantic segmentation
-  - Object detection
-  - LPRNet
-- demo_semantic_segmentation.py
-- demo_object_detection.py
+  - [Introduction](#introduction)
+	- [Dataset](#dataset)
+	- [Folder Structure](#folder-structure)
+	- [Metrics](#metrics)
+	- [Benchmark](#benchmark)
+	- [Training Instruction](#training-instruction)
+  - [Testing Instructions](#testing-instructions)
+  - [Demo](#demo)
+  - [Acknowledgement](#acknowledgement)
+  
+ - Online web demo at http://getplates.ml/
+  
+<a name="introduction"></a>
 
-# TODO
+# Introduction # 
 
-- [x] Complete changes in training code of object detection pipeline and add it in FCOS ideal ai pipeline as well
-- [ ] Create readme of each repository to run the codes.
-- [x] change class from 0 to dynamic in eval map and inference code semantic segmentation
-- [x] change eval to loading image instead of using yolo dataset loader
-- [ ] Use label smoothing in cross entropy loss
-- [ ] Correct global step thing in fcos pipeline
-- [x] Add eval map code for semantic segmentation
-- [x] Add code for running inference combined with lprnet for both object detection and semantic segmentation
+<hr />
+
+Indian Number (Licence) Plate Detection is a problem which hasn’t been explored much at an open source level. Most of the bigdatasets available are for countries like China [1], Brazil [2],but the model trained on these don’t perform well on Indianplates because the font styles and plate designs being usedin these countries are different. 
+<hr />
+
+<a name="dataset"></a>
+
+# Dataset # 
+
+In this paper we introducean Indian Number (licence) plate dataset with 16,192 imagesand 21683 number plates, along with that we introduce abenchmark model. We have annotated the plates using a 4point box which helped us in using semantic segmentation forthe detection step instead of object detection which is used inmost plate detection models and then the characters are alsolabelled to train our lprnet [3] based OCR for the recognitionstep
+
+- Link to dataset
+  
+<a name="folder-structure"></a>
+# Folder structure #
+
+- src
+  - semantic_segmentation
+  - object_detection
+  - License_Plate_Recognition
+- weights
+- infer_semanticseg.py
+- infer_objectdet.py
+
+<a name=" metrics"></a>
+
+# Metrics # 
+
+<a name="benchmark"></a>
+
+# Benchmark # 
+
+|                      |    FPS  |    AP  |   
+|---|---|---|---|---|---|---|-|---|---|---|
+|     FCOS(od)         |    x    |    y   |
+|    HRNet(semantic)   |    x    |    y   | 
+
+
+
+
+<a name="training-instructions"></a>
+
+# Training Instructions # 
+
+<a name="testing-instructions"></a>
+
+# Testing Instructions # 
+
+<a name="demo"></a>
+
+# Demo # 
+
+```python infer_objectdet.py --source --ouput_path
+```
+```python infer_semanticseg.py --source --ouput_path
+```
+<a name="acknowledgement"></a>
+
+# Acknowledgement # 
+
+If you have any problems about <paper name>, please contact <>.
+
+Please cite the paper 《》, if you benefit from this dataset.
