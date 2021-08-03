@@ -49,10 +49,10 @@ In this paper we introducean Indian Number (licence) plate dataset with 16,192 i
 
 # Benchmark # 
 
-|                      |    FPS  |    AP  |   
+|                       |    FPS  |    AP  |   
 |---|---|---|---|---|---|---|-|---|---|---|
-|     FCOS(od)         |    x    |    y   |
-|    HRNet(semantic)   |    x    |    y   | 
+|     FCOS(od)          |    x    |    y   |
+|    HRNet(semantic)    |    x    |    y   | 
 
 
 
