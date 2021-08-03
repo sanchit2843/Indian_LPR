@@ -86,18 +86,31 @@ def run_single_frame(semantic_model, lprnet, image, conf_thresh):
     return out_dict
 
 
-def plot_single_frame_from_out_dict(image, dict):
-    for _, v in dict.items():
-        coordinates, box, label = v["coordinates"], v["boxes"], v["label"]
-        if len(coordinates) == 0:
-            continue
-        image = cv2.rectangle(
-            image, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), thickness=2
-        )
-        # cv2.put text for adding label
-
-        # add code for plotting box using 4 points added in dict.
-    return image
+def plot_single_frame_from_out_dict(im, out_dict,line_thickness=3,color = (255,0,0)):
+    if out_dict:
+      for _, v in out_dict.items():
+        box, label = v["boxes"], v["label"]
+        tl = (
+            line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1
+        )  # line/font thickness
+        c1, c2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
+        cv2.rectangle(im, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
+        if label:
+            tf = max(tl - 1, 1)  # font thickness
+            t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]
+            c2 = c1[0] + t_size[0], c1[1] - t_size[1] - 3
+            cv2.rectangle(im, c1, c2, color, -1, cv2.LINE_AA)  # filled
+            cv2.putText(
+                im,
+                label,
+                (c1[0], c1[1] - 2),
+                0,
+                tl / 3,
+                [225, 255, 255],
+                thickness=tf,
+                lineType=cv2.LINE_AA,
+            )
+    return im
 
 
 def process_directory(args, semantic_model, lprnet):
@@ -157,8 +170,8 @@ def process_video(video_path, semantic_model, lprnet, output_dir):
                 cv2.VideoWriter_fourcc("M", "J", "P", "G"),
                 fps,
                 (
-                    frame.shape[0],
                     frame.shape[1],
+                    frame.shape[0],
                 ),
             )
         out_dict = run_single_frame(semantic_model, lprnet, frame, args.conf_thresh)
