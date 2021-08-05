@@ -260,10 +260,14 @@ if __name__ == "__main__":
     os.makedirs(os.path.join(args.output_path, "jsons"), exist_ok=True)
 
     # load object detection model
+    if torch.cuda.is_available():
+        os.environ['MASTER_ADDR'] = 'localhost'
+        os.environ['MASTER_PORT'] = '12355'
+        torch.distributed.init_process_group("gloo", rank=0, world_size=1)
 
     semantic_model = hrnet().eval()
-    # if torch.cuda.is_available():
-    #     semantic_model = nn.SyncBatchNorm.convert_sync_batchnorm(semantic_model)
+    if torch.cuda.is_available():
+        semantic_model = nn.SyncBatchNorm.convert_sync_batchnorm(semantic_model)
     semantic_model = nn.DataParallel(semantic_model)
     semantic_model.load_state_dict(
         torch.load(
