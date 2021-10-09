@@ -1,6 +1,6 @@
 
 <h1 align="center"> Indian_LPR</h1>
-<h3 align="center">Indian License Plate recognition.</h3>
+<h3 align="center">Indian License Plate recognition</h3>
 
 <p align="center">
     <a href="https://github.com/sanchit2843/Indian_LPR/master">
@@ -25,7 +25,6 @@
     <li><a href="#dataset"> ➤ Dataset</a></li>
     <li><a href="#folder-structure"> ➤ Folder Structure</a></li>
     <li><a href="#metrics"> ➤ Metrics</a></li>
-    <!--<li><a href="#experiments">Experiments</a></li>-->
     <li><a href="#training-instructions"> ➤ Training Instructions</a></li>
     <li><a href="#demo"> ➤ Demo</a></li>
     <li><a href="#acknowledgement"> ➤ Acknowledgement</a></li>
@@ -67,8 +66,10 @@ In this paper we introduce an Indian Number (licence) plate dataset with 16,192 
 <h2 id="folder-structure"> :cactus: Folder Structure</h2>
 
     code
-    .
+    
     │
+    ├── demo_images
+    |
     ├── src
     │   ├── License_Plate_Recognition
     │   │
@@ -204,7 +205,7 @@ python infer_objectdet.py --source demo_images/20201031_133155_3220.jpg
 <h3>semantic segmentation</h3>
 
 ```
-python infer_semanticseg.py --source --ouput_path
+python infer_semanticseg.py --source demo_images/20201031_133155_3220.jpg
 
 ```
 <img src="demo_images/20201031_133155_3220_semantic.jpg" alt="original image" width="70%" height="70%">
