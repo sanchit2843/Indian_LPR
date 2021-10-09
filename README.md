@@ -1,51 +1,94 @@
-# Indian_LPR
 
+<h1 align="center"> Indian_LPR</h1>
+<h3 align="center">Indian License Plate recognition.</h3>
 
-- [Indian_LPR](#indian_lpr)
-- [Introduction #](#introduction-)
-- [Dataset #](#dataset-)
-- [Folder structure](#folder-structure)
-- [Metrics #](#metrics-)
-    - [Detections](#detections)
-    - [Recognition](#recognition)
-- [Benchmark #](#benchmark-)
-- [Training Instructions #](#training-instructions-)
-    - [semantic segmentation](#semantic-segmentation)
-    - [object detection](#object-detection)
-    - [license plate recognition](#license-plate-recognition)
-- [Demo #](#demo-)
-- [Acknowledgement #](#acknowledgement-)
+<p align="center">
+    <a href="https://github.com/sanchit2843/Indian_LPR/master">
+    <img src="https://img.shields.io/github/last-commit/sanchit2843/Indian_LPR.svg?style=flat-square&logo=github&logoColor=white"
+         alt="GitHub last commit">
+    <a href="https://github.com/sanchit2843/Indian_LPR/issues">
+    <img src="https://img.shields.io/github/issues-raw/sanchit2843/Indian_LPR.svg?style=flat-square&logo=github&logoColor=white"
+         alt="GitHub issues">
+    <a href="https://github.com/sanchit2843/Indian_LPR/pulls">
+    <img src="https://img.shields.io/github/issues-pr-raw/sanchit2843/Indian_LPR.svg?style=flat-square&logo=github&logoColor=white"
+         alt="GitHub pull requests">
+    
+</p>
+     
+<!-- TABLE OF CONTENTS -->
+<h2 id="table-of-contents"> :book: Table of Contents</h2>
+
+<details open="open">
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about-the-project"> ➤ About The Project</a></li>
+    <li><a href="#dataset"> ➤ Dataset</a></li>
+    <li><a href="#folder-structure"> ➤ Folder Structure</a></li>
+    <li><a href="#metrics"> ➤ Metrics</a></li>
+    <!--<li><a href="#experiments">Experiments</a></li>-->
+    <li><a href="#training-instructions"> ➤ Training Instructions</a></li>
+    <li><a href="#demo"> ➤ Demo</a></li>
+    <li><a href="#acknowledgement"> ➤ Acknowledgement</a></li>
+  </ol>
+</details>
+
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
+
   
- - Online web demo at http://getplates.ml/
-  
-<a name="introduction"></a>
+<!-- ABOUT THE PROJECT -->
+<h2 id="about-the-project"> :pencil: About The Project</h2>
 
-# Introduction # 
+<p align="justify"> 
 
 <hr />
 Indian Number (Licence) Plate Detection is a problem which hasn’t been explored much at an open source level. Most of the big datasets available are for countries like China , Brazil ,but the model trained on these don’t perform well on Indian plates because the font styles and plate designs being used in these countries are different. 
 <hr />
 
-<a name="dataset"></a>
+</p>
 
-# Dataset # 
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
+
+<!-- DATASET -->
+<h2 id="dataset"> :floppy_disk: Dataset</h2>
+<p> 
 <hr />
+
 In this paper we introduce an Indian Number (licence) plate dataset with 16,192 images and 21683 number plates, along with that we introduce a benchmark model. We have annotated the plates using a 4 point box which helped us in using semantic segmentation for the detection step instead of object detection which is used in most plate detection models and then the characters are also labelled to train our lprnet based OCR for the recognition step
 
 - Link to dataset
 <hr />
+</p>
 
-<a name="folder-structure"></a>
-# Folder structure #
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
-- src
-  - semantic_segmentation
-  - object_detection
-  - License_Plate_Recognition
-- weights
-- infer_semanticseg.py
-- infer_objectdet.py
+<!-- :paw_prints:-->
+<!-- FOLDER STRUCTURE -->
+<h2 id="folder-structure"> :cactus: Folder Structure</h2>
+
+    code
+    .
+    │
+    ├── src
+    │   ├── License_Plate_Recognition
+    │   │
+    │   ├── object_detection
+    │   │
+    │   ├── semantic_segmentation
+    |
+    ├── weights
+    │   ├── best_lprnet.pth
+    │   │
+    │   ├── best_od.pth
+    │   │
+    │   ├── best_semantic.pth
+    |
+    ├── infer_objectdet.py
+    ├── infer_semanticseg.py
+    ├── README.md
+    
+
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
 <a name=" metrics"></a>
 
