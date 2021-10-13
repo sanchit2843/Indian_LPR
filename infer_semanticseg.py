@@ -98,7 +98,10 @@ def plot_single_frame_from_out_dict(im, out_dict,line_thickness=3,color = (255,0
             line_thickness or round(0.002 * (im.shape[0] + im.shape[1]) / 2) + 1
         )  # line/font thickness
         c1, c2 = (int(box[0]), int(box[1])), (int(box[2]), int(box[3]))
-        cv2.rectangle(im, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
+        mask = im.copy()
+        mask[int(box[1]):int(box[3]),int(box[0]):int(box[2])] = color
+        im = cv2.addWeighted(im, 0.7, mask, 0.3, 0)
+        # cv2.rectangle(im, c1, c2, color, thickness=tl, lineType=cv2.LINE_AA)
         if label:
             tf = max(tl - 1, 1)  # font thickness
             t_size = cv2.getTextSize(label, 0, fontScale=tl / 3, thickness=tf)[0]

@@ -31,11 +31,10 @@
   </ol>
 </details>
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
   
 <!-- ABOUT THE PROJECT -->
-<h2 id="about-the-project"> :pencil: About The Project</h2>
+<h2 id="about-the-project">  About The Project</h2>
 
 <p align="justify"> 
 
@@ -45,11 +44,9 @@ Indian Number (Licence) Plate Detection is a problem which hasn’t been explore
 
 </p>
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
-
 
 <!-- DATASET -->
-<h2 id="dataset"> :floppy_disk: Dataset</h2>
+<h2 id="dataset"> Dataset</h2>
 <p> 
 <hr />
 
@@ -59,11 +56,8 @@ In this paper we introduce an Indian Number (licence) plate dataset with 16,192 
 <hr />
 </p>
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
-
-<!-- :paw_prints:-->
 <!-- FOLDER STRUCTURE -->
-<h2 id="folder-structure"> :cactus: Folder Structure</h2>
+<h2 id="folder-structure"> Folder Structure</h2>
 
     code
     
@@ -89,10 +83,9 @@ In this paper we introduce an Indian Number (licence) plate dataset with 16,192 
     ├── README.md
     
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
 <!-- Metrics -->
-<h2 id="metrics"> :dart: Metrics</h2>
+<h2 id="metrics">Metrics</h2>
 <p align="justify"> 
 
 <h3>Detection</h3>
@@ -113,11 +106,9 @@ In this paper we introduce an Indian Number (licence) plate dataset with 16,192 
 
 </p>
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
-
 
 <!-- Benchmark -->
-<h2 id="benchmark"> :diamond_shape_with_a_dot_inside: Benchmark</h2>
+<h2 id="benchmark">Benchmark</h2>
 
 <p align="justify"> 
 
@@ -136,10 +127,8 @@ In the tables below we present the result of model developed on the test split, 
 
 </p>
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
-
 <!-- Training Instructions -->
-<h2 id="training-instructions"> :scroll: Training Instructions</h2>
+<h2 id="training-instructions">Training Instructions</h2>
 
 <hr />
 We have created a baseline model with 2 stage approach, the first stage being the detection of number plates in an image, followed by a second stage to recognize the text in a cropped image of the plate. For the detection stage, we tested two separate models, one using object detection which has been well explored for the task of number plate detection in the past, the second using a semantic segmentation based model for number plate detection.
@@ -182,10 +171,8 @@ python src/License_Plate_Recognition/train_LPRNet.py --train_img_dirs --test_img
 
 ```
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
-
 <!-- Demo -->
-<h2 id="demo"> :mag: Demo</h2>
+<h2 id="demo">Demo</h2>
 
 <h3>original image</h3>
 
@@ -211,15 +198,11 @@ python infer_semanticseg.py --source demo_images/20201031_133155_3220.jpg
 <img src="demo_images/20201031_133155_3220_semantic.jpg" alt="original image" width="70%" height="70%">
 
 
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
-
 <!-- Acknowledgement -->
-<h2 id="acknowledgement"> :books: Acknowledgement</h2>
+<h2 id="acknowledgement">Acknowledgement</h2>
 
 <hr />
 If you have any problems about <paper name>, please contact <>.
 
 Please cite the paper 《》, if you benefit from this dataset.
 <hr />
-
-![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
