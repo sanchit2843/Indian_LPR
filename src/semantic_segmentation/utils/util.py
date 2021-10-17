@@ -123,7 +123,7 @@ def get_warped_plates(rgb_image, coordinates):
         warped = cv2.warpPerspective(rgb_image, M, (width, height))
 
         if width < height:
-            warped = cv2.rotate(warped, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            warped = cv2.rotate(warped, cv2.ROTATE_90_CLOCKWISE)
 
         cropped_images.append(warped)
 

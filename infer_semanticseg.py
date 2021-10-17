@@ -48,7 +48,6 @@ def run_single_frame(semantic_model, lprnet, image, conf_thresh):
             .numpy()
             .astype(np.uint8)
         )
-
         coordinates, _ = plate_locate(out)
         scores = get_score_and_class_from_prediction(out,prediction_softmax, coordinates)
         pred_boxes = convert_coordinates_to_bbox(coordinates)
