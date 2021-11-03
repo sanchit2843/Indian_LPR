@@ -15,7 +15,7 @@
     
 </p>
 
-<p align="center"> Online web demo at [http://getplates.ml/] </p>
+<p align="center">[Online web demo](http://getplates.ml/)</p>
  
 <!-- TABLE OF CONTENTS -->
 <h2 id="table-of-contents">Table of Contents</h2>
