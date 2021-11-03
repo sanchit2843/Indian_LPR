@@ -1,6 +1,7 @@
 
 <h1 align="center"> Indian_LPR</h1>
 <h3 align="center">Indian License Plate recognition</h3>
+<p align="center"> http://getplates.ml/ </p>
 
 <p align="center">
     <a href="https://github.com/sanchit2843/Indian_LPR/master">
@@ -14,8 +15,6 @@
          alt="GitHub pull requests">
     
 </p>
-
-<p align="center">[Online web demo](http://getplates.ml/)</p>
  
 <!-- TABLE OF CONTENTS -->
 <h2 id="table-of-contents">Table of Contents</h2>
