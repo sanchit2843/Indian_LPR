@@ -53,7 +53,7 @@ Indian Number (Licence) Plate Detection is a problem which hasn’t been explore
 
 In this paper we introduce an Indian Number (licence) plate dataset with 16,192 images and 21683 number plates, along with that we introduce a benchmark model. We have annotated the plates using a 4 point box which helped us in using semantic segmentation for the detection step instead of object detection which is used in most plate detection models and then the characters are also labelled to train our lprnet based OCR for the recognition step
 
-- Link to dataset
+- Dataset form will be made public soon.
 <hr />
 </p>
 
