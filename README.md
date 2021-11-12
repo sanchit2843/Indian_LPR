@@ -203,7 +203,15 @@ python infer_semanticseg.py --source demo_images/20201031_133155_3220.jpg
 <h2 id="acknowledgement">Acknowledgement</h2>
 
 <hr />
-If you have any problems about <paper name>, please contact <>.
+If you have any problems about <paper name>, please contact <sanchittanwar75@gmail.com>.
 
-Please cite the paper 《》, if you benefit from this dataset.
+Please cite the paper @misc{tanwar2021indian,
+      title={Indian Licence Plate Dataset in the wild}, 
+      author={Sanchit Tanwar and Ayush Tiwari and Ritesh Chowdhry},
+      year={2021},
+      eprint={2111.06054},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+, if you benefit from this dataset.
 <hr />
