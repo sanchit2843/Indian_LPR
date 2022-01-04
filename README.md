@@ -1,7 +1,7 @@
 
 <h1 align="center"> Indian_LPR</h1>
 <h3 align="center">Indian License Plate dataset in wild</h3>
-<!--<p align="center"> http://getplates.ml/ </p>-->
+<p align="center"> http://getplates.ml/ </p>
 
 <p align="center">
     <a href="https://github.com/sanchit2843/Indian_LPR/master">
