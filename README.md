@@ -53,7 +53,9 @@ Indian Number (Licence) Plate Detection is a problem which hasn’t been explore
 
 In this paper we introduce an Indian Number (licence) plate dataset with 16,192 images and 21683 number plates, along with that we introduce a benchmark model. We have annotated the plates using a 4 point box which helped us in using semantic segmentation for the detection step instead of object detection which is used in most plate detection models and then the characters are also labelled to train our lprnet based OCR for the recognition step
 
-- Dataset form will be made public soon.
+- We are currently understanding the legalities behind making Indian Road data public and cannot give an estimated date to make the data public. Sorry for the hassle, apart from the public datasets mentioned in paper, you can use these datasets for license plate recognition.
+1. https://www.kaggle.com/datasets/kedarsai/indian-license-plates-with-labels
+2. https://idd.insaan.iiit.ac.in/ (Will require annotation for number plates), this is just a Indian driving scene dataset. 
 <hr />
 </p>
 
