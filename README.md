@@ -3,6 +3,7 @@
 <h3 align="center">Indian License Plate dataset in wild</h3>
 <p align="center"> http://getplates.ml/ </p>
 
+### We can't make dataset public because of legalities involved in making Indian Road data public, feel free to contact if you need any other help in your work. 
 <p align="center">
     <a href="https://github.com/sanchit2843/Indian_LPR/master">
     <img src="https://img.shields.io/github/last-commit/sanchit2843/Indian_LPR.svg?style=flat-square&logo=github&logoColor=white"
